@@ -1,13 +1,11 @@
 #include <ruby.h>
+
 #include <AudioToolbox/MusicPlayer.h>
 #include <CoreMIDI/MIDIServices.h>
-
-#include <stdio.h>
 
 /* Type defns */
 
 static VALUE rb_mCoreMIDI = Qnil;
-
 static VALUE rb_mAudioToolbox = Qnil;
 static VALUE rb_cMusicPlayer = Qnil;
 static VALUE rb_cMusicSequence = Qnil;
@@ -36,18 +34,26 @@ core_midi_get_destination (VALUE mod, VALUE idx)
 static void
 player_free (MusicPlayer player)
 {
-    DisposeMusicPlayer(player);
+    OSStatus err;
+    require_noerr( err = DisposeMusicPlayer(player), fail );
+    
+    fail:
+    rb_warning("DisposeMusicPlayer() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
 player_new (VALUE class)
 {
+    OSStatus err;
     MusicPlayer *ptrPlayer = ALLOC(MusicPlayer);
-    NewMusicPlayer(ptrPlayer);
+    require_noerr( err = NewMusicPlayer(ptrPlayer), fail );
     
     VALUE player = Data_Wrap_Struct(class, 0, player_free, ptrPlayer);
     rb_obj_call_init(player, 0, 0);
     return player;
+
+    fail:
+    rb_raise(rb_eRuntimeError, "NewMusicPlayer() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
@@ -57,8 +63,12 @@ player_is_playing (VALUE self)
     Data_Get_Struct(self, MusicPlayer, ptrPlayer);
     
     Boolean playing;
-    MusicPlayerIsPlaying(*ptrPlayer, &playing);
+    OSStatus err;
+    require_noerr( err = MusicPlayerIsPlaying(*ptrPlayer, &playing), fail );
     return playing ? Qtrue : Qfalse;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerIsPlaying() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
@@ -77,8 +87,13 @@ player_set_sequence (VALUE self, VALUE seq)
     Data_Get_Struct(seq, MusicSequence, ptrSeq);
     
     rb_iv_set(self, "@sequence", seq);
-    MusicPlayerSetSequence(*ptrPlayer, *ptrSeq);
+
+    OSStatus err;
+    require_noerr( err = MusicPlayerSetSequence(*ptrPlayer, *ptrSeq), fail );
     return seq;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerSetSequence() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
@@ -87,9 +102,13 @@ player_start (VALUE self)
     MusicPlayer *ptrPlayer;
     Data_Get_Struct(self, MusicPlayer, ptrPlayer);
     
-    MusicPlayerStart(*ptrPlayer);
+    OSStatus err;
+    require_noerr( err = MusicPlayerStart(*ptrPlayer), fail );
     
     return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerStart() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
@@ -97,36 +116,46 @@ player_stop (VALUE self)
 {
     MusicPlayer *ptrPlayer;
     Data_Get_Struct(self, MusicPlayer, ptrPlayer);
-    
-    MusicPlayerStop(*ptrPlayer);
+
+    OSStatus err;
+    require_noerr( err = MusicPlayerStop(*ptrPlayer), fail );
     
     return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerStop() failed with OSStatus %i.", (SInt32) err);
 }
 
 /* Sequence defns */
-
-static void
-sequence_free (MusicSequence seq)
-{}
 
 static VALUE
 sequence_new (VALUE class)
 {
     MusicSequence *ptrSeq = ALLOC(MusicSequence);
-    NewMusicSequence(ptrSeq);
-    VALUE seq = Data_Wrap_Struct(class, 0, sequence_free, ptrSeq);
+    OSStatus err;
+    require_noerr( err = NewMusicSequence(ptrSeq), fail );
+    VALUE seq = Data_Wrap_Struct(class, 0, 0, ptrSeq);
     rb_obj_call_init(seq, 0, 0);
     return seq;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "NewMusicSequence() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
 sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
 {
-  if (NIL_P(endpoint_ref)) { return Qnil; }
+    if (NIL_P(endpoint_ref)) { return Qnil; }
     MusicSequence *ptrSeq;
     Data_Get_Struct(self, MusicSequence, ptrSeq);
-    MusicSequenceSetMIDIEndpoint(*ptrSeq, (MIDIEndpointRef) NUM2ULONG(endpoint_ref));
+    
+    UInt32 ref = NUM2ULONG(endpoint_ref);
+    OSStatus err;
+    require_noerr( err = MusicSequenceSetMIDIEndpoint(*ptrSeq, (MIDIEndpointRef) ref), fail);
     return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceSetMIDIEndpoint() failed with OSStatus %i.", (SInt32) err);
 }
 
 /* Track defns */
@@ -145,7 +174,8 @@ track_new (VALUE class, VALUE seq)
     Data_Get_Struct(seq, MusicSequence, ptrSeq);
     
     MusicTrack *ptrTrack = ALLOC(MusicTrack);
-    MusicSequenceNewTrack(*ptrSeq, ptrTrack);
+    OSStatus err;
+    require_noerr( err = MusicSequenceNewTrack(*ptrSeq, ptrTrack), fail );
     
     VALUE track = Data_Wrap_Struct(class, 0, 0, ptrTrack);
     
@@ -153,6 +183,9 @@ track_new (VALUE class, VALUE seq)
     argv[0] = seq;
     rb_obj_call_init(track, 1, argv);
     return track;
+
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceNewTrack() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
@@ -163,11 +196,15 @@ track_add_midi_note_message (VALUE self, VALUE at, VALUE msg)
     
     MIDINoteMessage *ptrMsg;
     Data_Get_Struct(msg, MIDINoteMessage, ptrMsg);
-
+    
     MusicTimeStamp ts = (MusicTimeStamp) NUM2DBL(at);
-    MusicTrackNewMIDINoteEvent(*ptrTrack, ts, ptrMsg);
+    OSStatus err;
+    require_noerr( err = MusicTrackNewMIDINoteEvent(*ptrTrack, ts, ptrMsg), fail );
     
     return Qnil;
+
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDINoteEvent() failed with OSStatus %i.", (SInt32) err);
 }
 
 /* MIDINoteMessage */
