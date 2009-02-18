@@ -51,7 +51,7 @@ player_new (VALUE class)
     VALUE player = Data_Wrap_Struct(class, 0, player_free, ptrPlayer);
     rb_obj_call_init(player, 0, 0);
     return player;
-
+    
     fail:
     rb_raise(rb_eRuntimeError, "NewMusicPlayer() failed with OSStatus %i.", (SInt32) err);
 }
