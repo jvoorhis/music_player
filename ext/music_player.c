@@ -128,13 +128,24 @@ player_stop (VALUE self)
 
 /* Sequence defns */
 
+static void
+sequence_free (MusicSequence *ptrSeq)
+{
+    OSStatus err;
+    require_noerr( err = DisposeMusicSequence(*ptrSeq), fail );
+    return;
+    
+    fail:
+    rb_warning("DisposeMusicSequence() failed with %i.", (SInt32) err);
+}
+
 static VALUE
 sequence_new (VALUE class)
 {
     MusicSequence *ptrSeq = ALLOC(MusicSequence);
     OSStatus err;
     require_noerr( err = NewMusicSequence(ptrSeq), fail );
-    VALUE seq = Data_Wrap_Struct(class, 0, 0, ptrSeq);
+    VALUE seq = Data_Wrap_Struct(class, 0, sequence_free, ptrSeq);
     rb_obj_call_init(seq, 0, 0);
     return seq;
     
