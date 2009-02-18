@@ -32,10 +32,10 @@ core_midi_get_destination (VALUE mod, VALUE idx)
 /* MusicPlayer defns */
 
 static void
-player_free (MusicPlayer player)
+player_free (MusicPlayer *player)
 {
     OSStatus err;
-    require_noerr( err = DisposeMusicPlayer(player), fail );
+    require_noerr( err = DisposeMusicPlayer(*player), fail );
     
     fail:
     rb_warning("DisposeMusicPlayer() failed with OSStatus %i.", (SInt32) err);
