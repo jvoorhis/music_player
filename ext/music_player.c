@@ -231,27 +231,31 @@ midi_note_message_new (VALUE class, VALUE opts)
         rb_raise(rb_eTypeError, "Expected opts to be a Hash.");
     }
     
-    MIDINoteMessage *ptrMsg = ALLOC(MIDINoteMessage);
+    MIDINoteMessage *msg = ALLOC(MIDINoteMessage);
     VALUE optChn, optNote, optVel, optRelVel, optDur;
     
     optChn = rb_hash_aref(opts, ID2SYM(rb_intern("channel")));
-    ptrMsg->channel = (UInt8) FIXNUM_P(optChn) ? FIX2UINT(optChn) : 1;
+    msg->channel = (UInt8) FIXNUM_P(optChn) ? FIX2UINT(optChn) : 1;
     
-    optNote = rb_hash_aref(opts, ID2SYM(rb_intern("pitch"))); // FIXME no default pitch.
-    ptrMsg->note = (UInt8) FIXNUM_P(optNote) ? FIX2UINT(optNote) : 60;
+    optNote = rb_hash_aref(opts, ID2SYM(rb_intern("pitch")));
+    if (FIXNUM_P(optNote)) {
+        msg->note = (UInt8) FIX2UINT(optNote);
+    } else {
+        rb_raise(rb_eArgError, ":pitch is required.");
+    }
     
     optVel = rb_hash_aref(opts, ID2SYM(rb_intern("velocity")));
-    ptrMsg->velocity = (UInt8) FIXNUM_P(optVel) ? FIX2UINT(optVel) : 64;
+    msg->velocity = (UInt8) FIXNUM_P(optVel) ? FIX2UINT(optVel) : 64;
     
     optRelVel = rb_hash_aref(opts, ID2SYM(rb_intern("release_velocity")));
-    ptrMsg->releaseVelocity = (UInt8) FIXNUM_P(optRelVel) ? FIX2UINT(optRelVel) : 0;
+    msg->releaseVelocity = (UInt8) FIXNUM_P(optRelVel) ? FIX2UINT(optRelVel) : 0;
     
     optDur = rb_hash_aref(opts, ID2SYM(rb_intern("duration")));
-    ptrMsg->duration = (MusicTimeStamp) (T_FLOAT == TYPE(optDur) || T_FIXNUM == TYPE(optDur)) ? NUM2DBL(optDur) : 1.0;
+    msg->duration = (MusicTimeStamp) (T_FLOAT == TYPE(optDur) || T_FIXNUM == TYPE(optDur)) ? NUM2DBL(optDur) : 1.0;
     
-    VALUE msg = Data_Wrap_Struct(class, 0, midi_note_message_free, ptrMsg);
-    rb_obj_call_init(msg, 0, 0);
-    return msg;
+    VALUE rb_msg = Data_Wrap_Struct(class, 0, midi_note_message_free, msg);
+    rb_obj_call_init(rb_msg, 0, 0);
+    return rb_msg;
 }
 
 /* MIDIChannelMessage */
@@ -269,23 +273,23 @@ midi_channel_message_new (VALUE class, VALUE opts)
         rb_raise(rb_eTypeError, "Expected opts to be a Hash.");
     }
     
-    MIDIChannelMessage *ptrMsg = ALLOC(MIDIChannelMessage);
+    MIDIChannelMessage *msg = ALLOC(MIDIChannelMessage);
     VALUE optStatus, optData1, optData2;
     
     optStatus = rb_hash_aref(opts, ID2SYM(rb_intern("status")));
     if (!FIXNUM_P(optStatus)) {
         rb_raise(rb_eArgError, "Missing :status argument.");
     } else {
-        ptrMsg->status = NUM2DBL(optStatus);
+        msg->status = NUM2DBL(optStatus);
     }
     
     optData1 = rb_hash_aref(opts, ID2SYM(rb_intern("data1")));
-    if (!NIL_P(optData1)) { ptrMsg->data1 = (UInt8) FIX2INT(optData1); }
+    if (!NIL_P(optData1)) { msg->data1 = (UInt8) FIX2INT(optData1); }
     
     optData2 = rb_hash_aref(opts, ID2SYM(rb_intern("data2")));
-    if (!NIL_P(optData2)) { ptrMsg->data2 = (UInt8) FIX2INT(optData2); }
+    if (!NIL_P(optData2)) { msg->data2 = (UInt8) FIX2INT(optData2); }
     
-    return Data_Wrap_Struct(class, 0, midi_channel_message_free, ptrMsg);
+    return Data_Wrap_Struct(class, 0, midi_channel_message_free, msg);
 }
 
 /* Initialize extension */
