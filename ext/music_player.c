@@ -1,9 +1,8 @@
 #include <ruby.h>
-
 #include <AudioToolbox/MusicPlayer.h>
 #include <CoreMIDI/MIDIServices.h>
 
-/* Type defns */
+/* Ruby type decls */
 
 static VALUE rb_mCoreMIDI = Qnil;
 static VALUE rb_mAudioToolbox = Qnil;
@@ -46,12 +45,13 @@ static VALUE
 player_new (VALUE class)
 {
     OSStatus err;
-    MusicPlayer *ptrPlayer = ALLOC(MusicPlayer);
-    require_noerr( err = NewMusicPlayer(ptrPlayer), fail );
+    MusicPlayer *player = ALLOC(MusicPlayer);
+    VALUE rb_player;
     
-    VALUE player = Data_Wrap_Struct(class, 0, player_free, ptrPlayer);
-    rb_obj_call_init(player, 0, 0);
-    return player;
+    require_noerr( err = NewMusicPlayer(player), fail );
+    rb_player = Data_Wrap_Struct(class, 0, player_free, player);
+    rb_obj_call_init(rb_player, 0, 0);
+    return rb_player;
     
     fail:
     rb_raise(rb_eRuntimeError, "NewMusicPlayer() failed with OSStatus %i.", (SInt32) err);
@@ -60,12 +60,12 @@ player_new (VALUE class)
 static VALUE
 player_is_playing (VALUE self)
 {
-    MusicPlayer *ptrPlayer;
-    Data_Get_Struct(self, MusicPlayer, ptrPlayer);
-    
+    MusicPlayer *player;
     Boolean playing;
     OSStatus err;
-    require_noerr( err = MusicPlayerIsPlaying(*ptrPlayer, &playing), fail );
+    
+    Data_Get_Struct(self, MusicPlayer, player);
+    require_noerr( err = MusicPlayerIsPlaying(*player, &playing), fail );
     return playing ? Qtrue : Qfalse;
     
     fail:
@@ -79,19 +79,18 @@ player_get_sequence (VALUE self)
 }
 
 static VALUE
-player_set_sequence (VALUE self, VALUE seq)
+player_set_sequence (VALUE self, VALUE rb_seq)
 {
-    MusicPlayer *ptrPlayer;
-    Data_Get_Struct(self, MusicPlayer, ptrPlayer);
-    
-    MusicSequence *ptrSeq;
-    Data_Get_Struct(seq, MusicSequence, ptrSeq);
-    
-    rb_iv_set(self, "@sequence", seq);
-
+    MusicPlayer *player;
+    MusicSequence *seq;
     OSStatus err;
-    require_noerr( err = MusicPlayerSetSequence(*ptrPlayer, *ptrSeq), fail );
-    return seq;
+    
+    Data_Get_Struct(self, MusicPlayer, player);
+    Data_Get_Struct(rb_seq, MusicSequence, seq);
+    rb_iv_set(self, "@sequence", rb_seq);
+    
+    require_noerr( err = MusicPlayerSetSequence(*player, *seq), fail );
+    return rb_seq;
     
     fail:
     rb_raise(rb_eRuntimeError, "MusicPlayerSetSequence() failed with OSStatus %i.", (SInt32) err);
@@ -100,12 +99,11 @@ player_set_sequence (VALUE self, VALUE seq)
 static VALUE
 player_start (VALUE self)
 {
-    MusicPlayer *ptrPlayer;
-    Data_Get_Struct(self, MusicPlayer, ptrPlayer);
-    
+    MusicPlayer *player;
     OSStatus err;
-    require_noerr( err = MusicPlayerStart(*ptrPlayer), fail );
     
+    Data_Get_Struct(self, MusicPlayer, player);
+    require_noerr( err = MusicPlayerStart(*player), fail );
     return Qnil;
     
     fail:
@@ -115,12 +113,11 @@ player_start (VALUE self)
 static VALUE
 player_stop (VALUE self)
 {
-    MusicPlayer *ptrPlayer;
-    Data_Get_Struct(self, MusicPlayer, ptrPlayer);
-
+    MusicPlayer *player;
     OSStatus err;
-    require_noerr( err = MusicPlayerStop(*ptrPlayer), fail );
     
+    Data_Get_Struct(self, MusicPlayer, player);
+    require_noerr( err = MusicPlayerStop(*player), fail );
     return Qnil;
     
     fail:
@@ -130,10 +127,10 @@ player_stop (VALUE self)
 /* Sequence defns */
 
 static void
-sequence_free (MusicSequence *ptrSeq)
+sequence_free (MusicSequence *seq)
 {
     OSStatus err;
-    require_noerr( err = DisposeMusicSequence(*ptrSeq), fail );
+    require_noerr( err = DisposeMusicSequence(*seq), fail );
     return;
     
     fail:
@@ -143,12 +140,14 @@ sequence_free (MusicSequence *ptrSeq)
 static VALUE
 sequence_new (VALUE class)
 {
-    MusicSequence *ptrSeq = ALLOC(MusicSequence);
+    MusicSequence *seq = ALLOC(MusicSequence);
     OSStatus err;
-    require_noerr( err = NewMusicSequence(ptrSeq), fail );
-    VALUE seq = Data_Wrap_Struct(class, 0, sequence_free, ptrSeq);
-    rb_obj_call_init(seq, 0, 0);
-    return seq;
+    VALUE rb_seq;
+    
+    require_noerr( err = NewMusicSequence(seq), fail );
+    rb_seq = Data_Wrap_Struct(class, 0, sequence_free, seq);
+    rb_obj_call_init(rb_seq, 0, 0);
+    return rb_seq;
     
     fail:
     rb_raise(rb_eRuntimeError, "NewMusicSequence() failed with OSStatus %i.", (SInt32) err);
@@ -158,12 +157,13 @@ static VALUE
 sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
 {
     if (NIL_P(endpoint_ref)) { return Qnil; }
-    MusicSequence *ptrSeq;
-    Data_Get_Struct(self, MusicSequence, ptrSeq);
     
+    MusicSequence *seq;
     UInt32 ref = NUM2ULONG(endpoint_ref);
     OSStatus err;
-    require_noerr( err = MusicSequenceSetMIDIEndpoint(*ptrSeq, (MIDIEndpointRef) ref), fail);
+    
+    Data_Get_Struct(self, MusicSequence, seq);
+    require_noerr( err = MusicSequenceSetMIDIEndpoint(*seq, (MIDIEndpointRef) ref), fail);
     return Qnil;
     
     fail:
@@ -173,46 +173,43 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
 /* Track defns */
 
 static VALUE
-track_init (VALUE self, VALUE seq)
+track_init (VALUE self, VALUE rb_seq)
 {
-    rb_iv_set(self, "@sequence", seq);
+    rb_iv_set(self, "@sequence", rb_seq);
     return self;
 }
 
 static VALUE
-track_new (VALUE class, VALUE seq)
+track_new (VALUE class, VALUE rb_seq)
 {
-    MusicSequence *ptrSeq;
-    Data_Get_Struct(seq, MusicSequence, ptrSeq);
-    
-    MusicTrack *ptrTrack = ALLOC(MusicTrack);
+    MusicSequence *seq;
+    MusicTrack *track = ALLOC(MusicTrack);
     OSStatus err;
-    require_noerr( err = MusicSequenceNewTrack(*ptrSeq, ptrTrack), fail );
-    
-    VALUE track = Data_Wrap_Struct(class, 0, 0, ptrTrack);
-    
+    VALUE rb_track;
     VALUE argv[1];
-    argv[0] = seq;
-    rb_obj_call_init(track, 1, argv);
-    return track;
+    
+    Data_Get_Struct(rb_seq, MusicSequence, seq);
+    require_noerr( err = MusicSequenceNewTrack(*seq, track), fail );
+    rb_track = Data_Wrap_Struct(class, 0, 0, track);
+    argv[0] = rb_seq;
+    rb_obj_call_init(rb_track, 1, argv);
+    return rb_track;
 
     fail:
     rb_raise(rb_eRuntimeError, "MusicSequenceNewTrack() failed with OSStatus %i.", (SInt32) err);
 }
 
 static VALUE
-track_add_midi_note_message (VALUE self, VALUE at, VALUE msg)
+track_add_midi_note_message (VALUE self, VALUE at, VALUE rb_msg)
 {
-    MusicTrack *ptrTrack;
-    Data_Get_Struct(self, MusicTrack, ptrTrack);
-    
-    MIDINoteMessage *ptrMsg;
-    Data_Get_Struct(msg, MIDINoteMessage, ptrMsg);
-    
+    MusicTrack *track;
+    MIDINoteMessage *msg;
     MusicTimeStamp ts = (MusicTimeStamp) NUM2DBL(at);
     OSStatus err;
-    require_noerr( err = MusicTrackNewMIDINoteEvent(*ptrTrack, ts, ptrMsg), fail );
     
+    Data_Get_Struct(self, MusicTrack, track);
+    Data_Get_Struct(rb_msg, MIDINoteMessage, msg);
+    require_noerr( err = MusicTrackNewMIDINoteEvent(*track, ts, msg), fail );
     return Qnil;
 
     fail:
@@ -222,9 +219,9 @@ track_add_midi_note_message (VALUE self, VALUE at, VALUE msg)
 /* MIDINoteMessage */
 
 static void
-midi_note_message_free (MIDINoteMessage *ptrMsg)
+midi_note_message_free (MIDINoteMessage *msg)
 {
-    free(ptrMsg);
+    free(msg);
 }
 
 static VALUE
@@ -260,9 +257,9 @@ midi_note_message_new (VALUE class, VALUE opts)
 /* MIDIChannelMessage */
 
 static void
-midi_channel_message_free (MIDIChannelMessage *ptrMsg)
+midi_channel_message_free (MIDIChannelMessage *msg)
 {
-    free(ptrMsg);
+    free(msg);
 }
 
 static VALUE
@@ -283,10 +280,10 @@ midi_channel_message_new (VALUE class, VALUE opts)
     }
     
     optData1 = rb_hash_aref(opts, ID2SYM(rb_intern("data1")));
-    if (!NIL_P(optData1)) { ptrMsg->data1 = (char) FIX2INT(optData1); }
+    if (!NIL_P(optData1)) { ptrMsg->data1 = (UInt8) FIX2INT(optData1); }
     
     optData2 = rb_hash_aref(opts, ID2SYM(rb_intern("data2")));
-    if (!NIL_P(optData2)) { ptrMsg->data2 = (char) FIX2INT(optData2); }
+    if (!NIL_P(optData2)) { ptrMsg->data2 = (UInt8) FIX2INT(optData2); }
     
     return Data_Wrap_Struct(class, 0, midi_channel_message_free, ptrMsg);
 }
