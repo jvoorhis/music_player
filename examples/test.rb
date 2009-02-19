@@ -17,5 +17,5 @@ t.add_midi_note_message 3.0, MIDINoteMessage.new(:pitch => 72, :velocity => 110,
 
 p.sequence = s
 p.start
-sleep 5
+sleep 3
 p.stop
