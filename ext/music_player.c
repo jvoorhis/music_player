@@ -227,9 +227,8 @@ midi_note_message_free (MIDINoteMessage *msg)
 static VALUE
 midi_note_message_new (VALUE class, VALUE opts)
 {
-    if (T_HASH != TYPE(opts)) {
+    if (T_HASH != TYPE(opts))
         rb_raise(rb_eTypeError, "Expected opts to be a Hash.");
-    }
     
     MIDINoteMessage *msg = ALLOC(MIDINoteMessage);
     VALUE optChn, optNote, optVel, optRelVel, optDur;
