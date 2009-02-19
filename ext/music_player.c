@@ -218,6 +218,46 @@ track_add_midi_note_message (VALUE self, VALUE at, VALUE rb_msg)
 
 /* MIDINoteMessage */
 
+static VALUE
+midi_note_message_channel (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->channel);
+}
+
+static VALUE
+midi_note_message_note (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->note);
+}
+
+static VALUE
+midi_note_message_velocity (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->velocity);
+}
+
+static VALUE
+midi_note_message_release_velocity (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->releaseVelocity);
+}
+
+static VALUE
+midi_note_message_duration (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->duration);
+}
+
 static void
 midi_note_message_free (MIDINoteMessage *msg)
 {
@@ -234,20 +274,19 @@ midi_note_message_new (VALUE class, VALUE opts)
     VALUE optChn, optNote, optVel, optRelVel, optDur;
     
     optChn = rb_hash_aref(opts, ID2SYM(rb_intern("channel")));
-    msg->channel = (UInt8) FIXNUM_P(optChn) ? FIX2UINT(optChn) : 1;
+    msg->channel = FIXNUM_P(optChn) ? FIX2UINT(optChn) : 1;
     
-    optNote = rb_hash_aref(opts, ID2SYM(rb_intern("pitch")));
-    if (FIXNUM_P(optNote)) {
-        msg->note = (UInt8) FIX2UINT(optNote);
-    } else {
-        rb_raise(rb_eArgError, ":pitch is required.");
-    }
+    optNote = rb_hash_aref(opts, ID2SYM(rb_intern("note")));
+    if (FIXNUM_P(optNote))
+        msg->note = FIX2UINT(optNote);
+    else
+        rb_raise(rb_eArgError, ":note is required.");
     
     optVel = rb_hash_aref(opts, ID2SYM(rb_intern("velocity")));
-    msg->velocity = (UInt8) FIXNUM_P(optVel) ? FIX2UINT(optVel) : 64;
+    msg->velocity = FIXNUM_P(optVel) ? FIX2UINT(optVel) : 64;
     
     optRelVel = rb_hash_aref(opts, ID2SYM(rb_intern("release_velocity")));
-    msg->releaseVelocity = (UInt8) FIXNUM_P(optRelVel) ? FIX2UINT(optRelVel) : 0;
+    msg->releaseVelocity = FIXNUM_P(optRelVel) ? FIX2UINT(optRelVel) : 0;
     
     optDur = rb_hash_aref(opts, ID2SYM(rb_intern("duration")));
     msg->duration = (MusicTimeStamp) (T_FLOAT == TYPE(optDur) || T_FIXNUM == TYPE(optDur)) ? NUM2DBL(optDur) : 1.0;
@@ -333,6 +372,11 @@ Init_music_player ()
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);
     rb_define_singleton_method(rb_cMIDINoteMessage, "new", midi_note_message_new, 1);
+    rb_define_method(rb_cMIDINoteMessage, "channel", midi_note_message_channel, 0);
+    rb_define_method(rb_cMIDINoteMessage, "note", midi_note_message_note, 0);
+    rb_define_method(rb_cMIDINoteMessage, "velocity", midi_note_message_velocity, 0);
+    rb_define_method(rb_cMIDINoteMessage, "release_velocity", midi_note_message_release_velocity, 0);
+    rb_define_method(rb_cMIDINoteMessage, "duration", midi_note_message_duration, 0);
     
     /* AudioToolbox::MIDIChannelMessage */
     rb_cMIDIChannelMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIChannelMessage", rb_cObject);
