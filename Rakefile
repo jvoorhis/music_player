@@ -1,3 +1,5 @@
+require 'rake/testtask'
+
 task :examples do
   Dir['examples/*.rb'].each do |example|
     system('ruby', '-Iext', example)
@@ -8,4 +10,10 @@ task :build do
   Dir.chdir('ext') { system('make') }
 end
 
-task :default => :examples
+Rake::TestTask.new do |t|
+  t.libs << 'ext'
+  t.test_files = FileList['test/*_test.rb']
+  t.verbose = true
+end
+
+task :default => :test
