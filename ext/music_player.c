@@ -265,31 +265,31 @@ midi_note_message_free (MIDINoteMessage *msg)
 }
 
 static VALUE
-midi_note_message_new (VALUE class, VALUE opts)
+midi_note_message_new (VALUE class, VALUE rb_opts)
 {
-    if (T_HASH != TYPE(opts))
-        rb_raise(rb_eTypeError, "Expected opts to be a Hash.");
+    if (T_HASH != TYPE(rb_opts))
+        rb_raise(rb_eArgError, "Expected opts to be a Hash.");
     
     MIDINoteMessage *msg = ALLOC(MIDINoteMessage);
-    VALUE optChn, optNote, optVel, optRelVel, optDur;
+    VALUE rb_chn, rb_note, rb_vel, rb_rel_vel, rb_dur;
     
-    optChn = rb_hash_aref(opts, ID2SYM(rb_intern("channel")));
-    msg->channel = FIXNUM_P(optChn) ? FIX2UINT(optChn) : 1;
+    rb_chn = rb_hash_aref(rb_opts, ID2SYM(rb_intern("channel")));
+    msg->channel = FIXNUM_P(rb_chn) ? FIX2UINT(rb_chn) : 1;
     
-    optNote = rb_hash_aref(opts, ID2SYM(rb_intern("note")));
-    if (FIXNUM_P(optNote))
-        msg->note = FIX2UINT(optNote);
+    rb_note = rb_hash_aref(rb_opts, ID2SYM(rb_intern("note")));
+    if (FIXNUM_P(rb_note))
+        msg->note = FIX2UINT(rb_note);
     else
         rb_raise(rb_eArgError, ":note is required.");
     
-    optVel = rb_hash_aref(opts, ID2SYM(rb_intern("velocity")));
-    msg->velocity = FIXNUM_P(optVel) ? FIX2UINT(optVel) : 64;
+    rb_vel = rb_hash_aref(rb_opts, ID2SYM(rb_intern("velocity")));
+    msg->velocity = FIXNUM_P(rb_vel) ? FIX2UINT(rb_vel) : 64;
     
-    optRelVel = rb_hash_aref(opts, ID2SYM(rb_intern("release_velocity")));
-    msg->releaseVelocity = FIXNUM_P(optRelVel) ? FIX2UINT(optRelVel) : 0;
+    rb_rel_vel = rb_hash_aref(rb_opts, ID2SYM(rb_intern("release_velocity")));
+    msg->releaseVelocity = FIXNUM_P(rb_rel_vel) ? FIX2UINT(rb_rel_vel) : 0;
     
-    optDur = rb_hash_aref(opts, ID2SYM(rb_intern("duration")));
-    msg->duration = (MusicTimeStamp) (T_FLOAT == TYPE(optDur) || T_FIXNUM == TYPE(optDur)) ? NUM2DBL(optDur) : 1.0;
+    rb_dur = rb_hash_aref(rb_opts, ID2SYM(rb_intern("duration")));
+    msg->duration = (MusicTimeStamp) (T_FLOAT == TYPE(rb_dur) || T_FIXNUM == TYPE(rb_dur)) ? NUM2DBL(rb_dur) : 1.0;
     
     VALUE rb_msg = Data_Wrap_Struct(class, 0, midi_note_message_free, msg);
     rb_obj_call_init(rb_msg, 0, 0);
@@ -298,6 +298,30 @@ midi_note_message_new (VALUE class, VALUE opts)
 
 /* MIDIChannelMessage */
 
+static VALUE
+midi_channel_message_status (VALUE self)
+{
+    MIDIChannelMessage *msg;
+    Data_Get_Struct(self, MIDIChannelMessage, msg);
+    return UINT2NUM(msg->status);
+}
+
+static VALUE
+midi_channel_message_data1 (VALUE self)
+{
+    MIDIChannelMessage *msg;
+    Data_Get_Struct(self, MIDIChannelMessage, msg);
+    return UINT2NUM(msg->data1);
+}
+
+static VALUE
+midi_channel_message_data2 (VALUE self)
+{
+    MIDIChannelMessage *msg;
+    Data_Get_Struct(self, MIDIChannelMessage, msg);
+    return UINT2NUM(msg->data2);
+}
+
 static void
 midi_channel_message_free (MIDIChannelMessage *msg)
 {
@@ -305,27 +329,25 @@ midi_channel_message_free (MIDIChannelMessage *msg)
 }
 
 static VALUE
-midi_channel_message_new (VALUE class, VALUE opts)
+midi_channel_message_new (VALUE class, VALUE rb_opts)
 {
-    if (T_HASH != TYPE(opts)) {
-        rb_raise(rb_eTypeError, "Expected opts to be a Hash.");
-    }
+    if (T_HASH != TYPE(rb_opts))
+        rb_raise(rb_eArgError, "Expected opts to be a Hash.");
     
     MIDIChannelMessage *msg = ALLOC(MIDIChannelMessage);
-    VALUE optStatus, optData1, optData2;
+    VALUE rb_status, rb_data1, rb_data2;
     
-    optStatus = rb_hash_aref(opts, ID2SYM(rb_intern("status")));
-    if (!FIXNUM_P(optStatus)) {
-        rb_raise(rb_eArgError, "Missing :status argument.");
-    } else {
-        msg->status = NUM2DBL(optStatus);
-    }
+    rb_status = rb_hash_aref(rb_opts, ID2SYM(rb_intern("status")));
+    if (!FIXNUM_P(rb_status))
+        rb_raise(rb_eArgError, ":status is required.");
+    else
+        msg->status = NUM2DBL(rb_status);
     
-    optData1 = rb_hash_aref(opts, ID2SYM(rb_intern("data1")));
-    if (!NIL_P(optData1)) { msg->data1 = (UInt8) FIX2INT(optData1); }
+    rb_data1 = rb_hash_aref(rb_opts, ID2SYM(rb_intern("data1")));
+    if (!NIL_P(rb_data1)) msg->data1 = (UInt8) FIX2INT(rb_data1);
     
-    optData2 = rb_hash_aref(opts, ID2SYM(rb_intern("data2")));
-    if (!NIL_P(optData2)) { msg->data2 = (UInt8) FIX2INT(optData2); }
+    rb_data2 = rb_hash_aref(rb_opts, ID2SYM(rb_intern("data2")));
+    if (!NIL_P(rb_data2)) msg->data2 = (UInt8) FIX2INT(rb_data2);
     
     return Data_Wrap_Struct(class, 0, midi_channel_message_free, msg);
 }
@@ -381,4 +403,7 @@ Init_music_player ()
     /* AudioToolbox::MIDIChannelMessage */
     rb_cMIDIChannelMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIChannelMessage", rb_cObject);
     rb_define_singleton_method(rb_cMIDIChannelMessage, "new", midi_channel_message_new, 1);
+    rb_define_method(rb_cMIDIChannelMessage, "status", midi_channel_message_status, 0);
+    rb_define_method(rb_cMIDIChannelMessage, "data1", midi_channel_message_data1, 0);
+    rb_define_method(rb_cMIDIChannelMessage, "data2", midi_channel_message_data2, 0);
 }
