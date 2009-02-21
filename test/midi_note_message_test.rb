@@ -22,4 +22,16 @@ class MIDINoteMessageHelper < Test::Unit::TestCase
     assert_equal 0, msg.release_velocity
     assert_equal 1.0, msg.duration
   end
+
+  def test_accessors
+    msg = MIDINoteMessage.new( # All arbitrary, non-default values.
+            :note => note=50,
+            :velocity => velocity=50,
+            :release_velocity => release_velocity=30,
+            :duration => duration=2.0)
+    assert_equal note, msg.note
+    assert_equal velocity, msg.velocity
+    assert_equal release_velocity, msg.release_velocity
+    assert_equal duration, msg.duration
+  end
 end
