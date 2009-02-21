@@ -7,7 +7,10 @@ task :examples do
 end
 
 task :build do
-  Dir.chdir('ext') { system('make') }
+  Dir.chdir('ext') do
+    system('ruby', 'extconf.rb')
+    system('make')
+  end
 end
 
 Rake::TestTask.new do |t|
@@ -15,5 +18,7 @@ Rake::TestTask.new do |t|
   t.test_files = FileList['test/*_test.rb']
   t.verbose = true
 end
+
+task :test => :build # Always test the latest build.
 
 task :default => :test
