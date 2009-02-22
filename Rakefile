@@ -13,6 +13,12 @@ task :build do
   end
 end
 
+task :clean do
+  Dir.chdir('ext') do
+    system('make', 'clean')
+  end
+end
+
 Rake::TestTask.new do |t|
   t.libs << 'ext'
   t.test_files = FileList['test/*_test.rb']
