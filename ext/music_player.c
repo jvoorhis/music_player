@@ -160,6 +160,40 @@ player_set_time (VALUE self, VALUE rb_ts)
     rb_raise(rb_eRuntimeError, "MusicPlayerSetTime() failed with OSStatus %i.", (SInt32) err);
 }
 
+static VALUE
+player_get_play_rate_scalar (VALUE self)
+{
+    MusicPlayer *player;
+    Float64 scalar;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicPlayer, player);
+    require_noerr( err = MusicPlayerGetPlayRateScalar(*player, &scalar), fail );
+    return rb_float_new(scalar);
+
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerGetPlayRateScalar() failed with OSStatus %i.", (SInt32) err);
+}
+
+static VALUE
+player_set_play_rate_scalar (VALUE self, VALUE rb_scalar)
+{
+    if (!PRIM_NUM_P(rb_scalar))
+        rb_raise(rb_eArgError, "Expected scalar to be a number.");
+    
+    MusicPlayer *player;
+    Float64 scalar;
+    OSStatus err;
+
+    scalar = NUM2DBL(rb_scalar);
+    Data_Get_Struct(self, MusicPlayer, player);
+    require_noerr( err = MusicPlayerSetPlayRateScalar(*player, scalar), fail );
+    return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerSetPlayRateScalar() failed with %i.", (SInt32) err);
+}
+
 /* Sequence defns */
 
 static void
@@ -459,6 +493,8 @@ Init_music_player ()
     rb_define_method(rb_cMusicPlayer, "stop", player_stop, 0);
     rb_define_method(rb_cMusicPlayer, "time", player_get_time, 0);
     rb_define_method(rb_cMusicPlayer, "time=", player_set_time, 1);
+    rb_define_method(rb_cMusicPlayer, "play_rate_scalar", player_get_play_rate_scalar, 0);
+    rb_define_method(rb_cMusicPlayer, "play_rate_scalar=", player_set_play_rate_scalar, 1);
     
     /* AudioToolbox::MusicSequence */
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);

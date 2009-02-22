@@ -14,10 +14,18 @@ class MusicPlayerTest < Test::Unit::TestCase
     @player.sequence = @sequence
   end
   
-  def test_player
+  def test_playback
     assert_nothing_raised { assert_nil @player.start }
     assert @player.playing?
     assert_nothing_raised { assert_nil @player.stop }
     assert !@player.playing?
+  end
+
+  def test_play_rate_scalar
+    assert_nothing_raised do
+      assert_equal 1.0, @player.play_rate_scalar
+      @player.play_rate_scalar = 1.6
+      assert_equal 1.6, @player.play_rate_scalar
+    end
   end
 end
