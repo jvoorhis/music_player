@@ -36,6 +36,7 @@ player_free (MusicPlayer *player)
 {
     OSStatus err;
     require_noerr( err = DisposeMusicPlayer(*player), fail );
+    return;
     
     fail:
     rb_warning("DisposeMusicPlayer() failed with OSStatus %i.", (SInt32) err);
@@ -185,8 +186,7 @@ track_new (VALUE class, VALUE rb_seq)
     MusicSequence *seq;
     MusicTrack *track = ALLOC(MusicTrack);
     OSStatus err;
-    VALUE rb_track;
-    VALUE argv[1];
+    VALUE rb_track, argv[1];
     
     Data_Get_Struct(rb_seq, MusicSequence, seq);
     require_noerr( err = MusicSequenceNewTrack(*seq, track), fail );
@@ -200,11 +200,11 @@ track_new (VALUE class, VALUE rb_seq)
 }
 
 static VALUE
-track_add_midi_note_message (VALUE self, VALUE at, VALUE rb_msg)
+track_add_midi_note_message (VALUE self, VALUE rb_at, VALUE rb_msg)
 {
     MusicTrack *track;
     MIDINoteMessage *msg;
-    MusicTimeStamp ts = (MusicTimeStamp) NUM2DBL(at);
+    MusicTimeStamp ts = (MusicTimeStamp) NUM2DBL(rb_at);
     OSStatus err;
     
     Data_Get_Struct(self, MusicTrack, track);
@@ -214,6 +214,23 @@ track_add_midi_note_message (VALUE self, VALUE at, VALUE rb_msg)
 
     fail:
     rb_raise(rb_eRuntimeError, "MusicTrackNewMIDINoteEvent() failed with OSStatus %i.", (SInt32) err);
+}
+
+static VALUE
+track_add_midi_channel_message (VALUE self, VALUE rb_at, VALUE rb_msg)
+{
+    MusicTrack *track;
+    MIDIChannelMessage *msg;
+    MusicTimeStamp ts = (MusicTimeStamp) NUM2DBL(rb_at);
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicTrack, track);
+    Data_Get_Struct(rb_msg, MIDIChannelMessage, msg);
+    require_noerr( err = MusicTrackNewMIDIChannelEvent(*track, ts, msg), fail );
+    return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDIChannelEvent() failed with OSStatus %i.", (SInt32) err);
 }
 
 /* MIDINoteMessage */
@@ -265,14 +282,16 @@ midi_note_message_free (MIDINoteMessage *msg)
 }
 
 static VALUE
-midi_note_message_new (VALUE class, VALUE rb_opts)
+midi_note_message_init (VALUE self, VALUE rb_opts)
 {
     if (T_HASH != TYPE(rb_opts))
-        rb_raise(rb_eArgError, "Expected opts to be a Hash.");
-    
-    MIDINoteMessage *msg = ALLOC(MIDINoteMessage);
+        rb_raise(rb_eArgError, "Expected argument to be a Hash.");
+
+    MIDINoteMessage *msg;
     VALUE rb_chn, rb_note, rb_vel, rb_rel_vel, rb_dur;
-    
+
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+
     rb_chn = rb_hash_aref(rb_opts, ID2SYM(rb_intern("channel")));
     msg->channel = FIXNUM_P(rb_chn) ? FIX2UINT(rb_chn) : 1;
     
@@ -291,8 +310,18 @@ midi_note_message_new (VALUE class, VALUE rb_opts)
     rb_dur = rb_hash_aref(rb_opts, ID2SYM(rb_intern("duration")));
     msg->duration = (MusicTimeStamp) (T_FLOAT == TYPE(rb_dur) || T_FIXNUM == TYPE(rb_dur)) ? NUM2DBL(rb_dur) : 1.0;
     
-    VALUE rb_msg = Data_Wrap_Struct(class, 0, midi_note_message_free, msg);
-    rb_obj_call_init(rb_msg, 0, 0);
+    return self;
+}
+
+static VALUE
+midi_note_message_new (VALUE class, VALUE rb_opts)
+{
+    MIDINoteMessage *msg = ALLOC(MIDINoteMessage);
+    VALUE rb_msg, argv[1];
+    
+    rb_msg = Data_Wrap_Struct(class, 0, midi_note_message_free, msg);
+    argv[0] = rb_opts;
+    rb_obj_call_init(rb_msg, 1, argv);
     return rb_msg;
 }
 
@@ -329,13 +358,15 @@ midi_channel_message_free (MIDIChannelMessage *msg)
 }
 
 static VALUE
-midi_channel_message_new (VALUE class, VALUE rb_opts)
+midi_channel_message_init (VALUE self, VALUE rb_opts)
 {
     if (T_HASH != TYPE(rb_opts))
-        rb_raise(rb_eArgError, "Expected opts to be a Hash.");
+        rb_raise(rb_eArgError, "Expected argument to be a Hash.");
     
-    MIDIChannelMessage *msg = ALLOC(MIDIChannelMessage);
+    MIDIChannelMessage *msg;
     VALUE rb_status, rb_data1, rb_data2;
+    
+    Data_Get_Struct(self, MIDIChannelMessage, msg);
     
     rb_status = rb_hash_aref(rb_opts, ID2SYM(rb_intern("status")));
     if (!FIXNUM_P(rb_status))
@@ -349,7 +380,19 @@ midi_channel_message_new (VALUE class, VALUE rb_opts)
     rb_data2 = rb_hash_aref(rb_opts, ID2SYM(rb_intern("data2")));
     if (!NIL_P(rb_data2)) msg->data2 = (UInt8) FIX2INT(rb_data2);
     
-    return Data_Wrap_Struct(class, 0, midi_channel_message_free, msg);
+    return self;
+}
+
+static VALUE
+midi_channel_message_new (VALUE class, VALUE rb_opts)
+{
+    MIDIChannelMessage *msg = ALLOC(MIDIChannelMessage);
+    VALUE rb_msg, argv[1];
+    
+    rb_msg = Data_Wrap_Struct(class, 0, midi_channel_message_free, msg);
+    argv[0] = rb_opts;
+    rb_obj_call_init(rb_msg, 1, argv);
+    return rb_msg;
 }
 
 /* Initialize extension */
@@ -390,10 +433,12 @@ Init_music_player ()
     rb_define_singleton_method(rb_cMusicTrack, "new", track_new, 1);
     rb_define_method(rb_cMusicTrack, "initialize", track_init, 1);
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
+    rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);
     rb_define_singleton_method(rb_cMIDINoteMessage, "new", midi_note_message_new, 1);
+    rb_define_method(rb_cMIDINoteMessage, "initialize", midi_note_message_init, 1);
     rb_define_method(rb_cMIDINoteMessage, "channel", midi_note_message_channel, 0);
     rb_define_method(rb_cMIDINoteMessage, "note", midi_note_message_note, 0);
     rb_define_method(rb_cMIDINoteMessage, "velocity", midi_note_message_velocity, 0);
@@ -403,6 +448,7 @@ Init_music_player ()
     /* AudioToolbox::MIDIChannelMessage */
     rb_cMIDIChannelMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIChannelMessage", rb_cObject);
     rb_define_singleton_method(rb_cMIDIChannelMessage, "new", midi_channel_message_new, 1);
+    rb_define_method(rb_cMIDIChannelMessage, "initialize", midi_channel_message_init, 1);
     rb_define_method(rb_cMIDIChannelMessage, "status", midi_channel_message_status, 0);
     rb_define_method(rb_cMIDIChannelMessage, "data1", midi_channel_message_data1, 0);
     rb_define_method(rb_cMIDIChannelMessage, "data2", midi_channel_message_data2, 0);
