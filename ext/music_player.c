@@ -1,4 +1,5 @@
 #include <ruby.h>
+#include "rubyutil.h"
 #include <AudioToolbox/MusicPlayer.h>
 #include <CoreMIDI/MIDIServices.h>
 
@@ -123,6 +124,40 @@ player_stop (VALUE self)
     
     fail:
     rb_raise(rb_eRuntimeError, "MusicPlayerStop() failed with OSStatus %i.", (SInt32) err);
+}
+
+static VALUE
+player_get_time (VALUE self)
+{
+    MusicPlayer *player;
+    MusicTimeStamp ts;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicPlayer, player);
+    require_noerr( err = MusicPlayerGetTime(*player, &ts), fail );
+    return rb_float_new((Float64) ts);
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerGetTime() failed with OSStatus %i.", (SInt32) err);
+}
+
+static VALUE
+player_set_time (VALUE self, VALUE rb_ts)
+{
+    if (PRIM_NUM_P(rb_ts))
+        rb_raise(rb_eArgError, "Expected argument to be a Float.");
+    
+    MusicPlayer *player;
+    MusicTimeStamp ts;
+    OSStatus err;
+    
+    ts = rb_num2dbl(rb_ts);
+    Data_Get_Struct(self, MusicPlayer, player);
+    require_noerr( err = MusicPlayerSetTime(*player, ts), fail );
+    return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicPlayerSetTime() failed with OSStatus %i.", (SInt32) err);
 }
 
 /* Sequence defns */
@@ -308,7 +343,7 @@ midi_note_message_init (VALUE self, VALUE rb_opts)
     msg->releaseVelocity = FIXNUM_P(rb_rel_vel) ? FIX2UINT(rb_rel_vel) : 0;
     
     rb_dur = rb_hash_aref(rb_opts, ID2SYM(rb_intern("duration")));
-    msg->duration = (MusicTimeStamp) (T_FLOAT == TYPE(rb_dur) || T_FIXNUM == TYPE(rb_dur)) ? NUM2DBL(rb_dur) : 1.0;
+    msg->duration = (MusicTimeStamp) (PRIM_NUM_P(rb_dur)) ? NUM2DBL(rb_dur) : 1.0;
     
     return self;
 }
@@ -422,6 +457,8 @@ Init_music_player ()
     rb_define_method(rb_cMusicPlayer, "sequence=", player_set_sequence, 1);
     rb_define_method(rb_cMusicPlayer, "start", player_start, 0);
     rb_define_method(rb_cMusicPlayer, "stop", player_stop, 0);
+    rb_define_method(rb_cMusicPlayer, "time", player_get_time, 0);
+    rb_define_method(rb_cMusicPlayer, "time=", player_set_time, 1);
     
     /* AudioToolbox::MusicSequence */
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);
