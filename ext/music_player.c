@@ -10,6 +10,7 @@ static VALUE rb_mAudioToolbox = Qnil;
 static VALUE rb_cMusicPlayer = Qnil;
 static VALUE rb_cMusicSequence = Qnil;
 static VALUE rb_cMusicTrack = Qnil;
+static VALUE rb_cMusicTracksProxy = Qnil;
 static VALUE rb_cMIDINoteMessage = Qnil;
 static VALUE rb_cMIDIChannelMessage = Qnil;
 
@@ -238,6 +239,31 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
     
     fail:
     rb_raise(rb_eRuntimeError, "MusicSequenceSetMIDIEndpoint() failed with OSStatus %i.", (SInt32) err);
+}
+
+static VALUE
+sequence_tracks (VALUE self)
+{
+    MusicSequence *seq;
+    Data_Get_Struct(self, MusicSequence, seq);
+    return Data_Wrap_Struct(rb_cMusicTracksProxy, 0, 0, seq);
+}
+
+/* MusicSequence#Tracks proxy defns */
+
+static VALUE
+tracks_count (VALUE self)
+{
+    MusicSequence *seq;
+    UInt32 track_count;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicSequence, seq);
+    require_noerr( err = MusicSequenceGetTrackCount(*seq, &track_count), fail );
+    return UINT2NUM(track_count);
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceGetTrackCount() failed with %i.", (SInt32) err);
 }
 
 /* Track defns */
@@ -500,6 +526,7 @@ Init_music_player ()
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);
     rb_define_singleton_method(rb_cMusicSequence, "new", sequence_new, 0);
     rb_define_method(rb_cMusicSequence, "midi_endpoint=", sequence_set_midi_endpoint, 1);
+    rb_define_method(rb_cMusicSequence, "tracks", sequence_tracks, 0);
     
     /* AudioToolbox::MusicTrack */
     rb_cMusicTrack = rb_define_class_under(rb_mAudioToolbox, "MusicTrack", rb_cObject);
@@ -507,6 +534,10 @@ Init_music_player ()
     rb_define_method(rb_cMusicTrack, "initialize", track_init, 1);
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
     rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
+
+    /* AudioToolbox::MusicSequence#tracks Proxy */
+    rb_cMusicTracksProxy = rb_define_class_under(rb_cMusicSequence, "TracksProxy", rb_cObject);
+    rb_define_method(rb_cMusicTracksProxy, "size", tracks_count, 0);
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);

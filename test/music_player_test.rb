@@ -1,5 +1,4 @@
 require File.join(File.dirname(__FILE__), 'test_helper.rb')
-require 'music_player'
 
 class MusicPlayerTest < Test::Unit::TestCase
   def setup
