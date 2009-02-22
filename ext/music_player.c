@@ -13,6 +13,7 @@ static VALUE rb_cMusicTrack = Qnil;
 static VALUE rb_cMusicTracks = Qnil;
 static VALUE rb_cMIDINoteMessage = Qnil;
 static VALUE rb_cMIDIChannelMessage = Qnil;
+static VALUE rb_cExtendedTempoEvent = Qnil;
 
 /* CoreMIDI defns */
 
@@ -244,8 +245,6 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
 static VALUE
 sequence_tracks (VALUE self)
 {
-    MusicSequence *seq;
-    Data_Get_Struct(self, MusicSequence, seq);
     return rb_funcall(rb_cMusicTracks, rb_intern("new"), 1, self);
 }
 
@@ -259,11 +258,11 @@ track_init (VALUE self, VALUE rb_seq)
 }
 
 static VALUE
-track_internal_new (VALUE seq, MusicTrack track)
+track_internal_new (VALUE rb_seq, MusicTrack *track)
 {
     VALUE rb_track, argv[1];
     rb_track = Data_Wrap_Struct(rb_cMusicTrack, 0, 0, track);
-    argv[0] = seq;
+    argv[0] = rb_seq;
     rb_obj_call_init(rb_track, 1, argv);
     return rb_track;
 }
@@ -321,20 +320,47 @@ track_add_midi_channel_message (VALUE self, VALUE rb_at, VALUE rb_msg)
     rb_raise(rb_eRuntimeError, "MusicTrackNewMIDIChannelEvent() failed with OSStatus %i.", (int) err);
 }
 
+static VALUE
+track_add_extended_tempo_event (VALUE self, VALUE rb_at, VALUE rb_bpm)
+{
+    MusicTrack *track;
+    MusicTimeStamp ts;
+    Float64 bpm;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicTrack, track);
+    
+    if (PRIM_NUM_P(rb_at))
+        ts = NUM2DBL(rb_at);
+    else
+        rb_raise(rb_eArgError, "Expected first arg to be a number.");
+    
+    if (PRIM_NUM_P(rb_bpm))
+        bpm = NUM2DBL(rb_bpm);
+    else
+        rb_raise(rb_eArgError, "Expected second arg to be a number.");
+    
+    require_noerr( err = MusicTrackNewExtendedTempoEvent(*track, ts, bpm), fail );
+    return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicTrackNewExtendedTempoEvent() failed with OSStatus %i.", (int) err);
+}
+
 /* MusicSequence#Tracks proxy defns */
 
 static VALUE
-tracks_init (VALUE self, VALUE seq)
+tracks_init (VALUE self, VALUE rb_seq)
 {
-    rb_iv_set(self, "@sequence", seq);
+    rb_iv_set(self, "@sequence", rb_seq);
     return self;
 }
 
 MusicSequence*
-tracks_get_seq (VALUE tracks)
+tracks_get_seq (VALUE rb_tracks)
 {
     MusicSequence *seq;
-    VALUE rb_seq = rb_iv_get(tracks, "@sequence");
+    VALUE rb_seq = rb_iv_get(rb_tracks, "@sequence");
     Data_Get_Struct(rb_seq, MusicSequence, seq);
     return seq;
 }
@@ -342,11 +368,10 @@ tracks_get_seq (VALUE tracks)
 static VALUE
 tracks_size (VALUE self)
 {
-    MusicSequence *seq;
+    MusicSequence *seq = tracks_get_seq(self);
     UInt32 track_count;
     OSStatus err;
     
-    seq = tracks_get_seq(self);
     require_noerr( err = MusicSequenceGetTrackCount(*seq, &track_count), fail );
     return UINT2NUM(track_count);
     
@@ -355,23 +380,22 @@ tracks_size (VALUE self)
 }
 
 static VALUE
-tracks_ind (VALUE self, VALUE key)
+tracks_ind (VALUE self, VALUE rb_key)
 {
-    if (!FIXNUM_P(key)) rb_raise(rb_eArgError, "Expected key to be a Fixnum.");
-    MusicSequence *seq;
-    MusicTrack track;
+    if (!FIXNUM_P(rb_key)) rb_raise(rb_eArgError, "Expected key to be a Fixnum.");
+    MusicSequence *seq = tracks_get_seq(self);
+    MusicTrack *track = ALLOC(MusicTrack);
     VALUE rb_seq = rb_iv_get(self, "@sequence");
     OSStatus err;
     
-    Data_Get_Struct(rb_seq, MusicSequence, seq);
-    require_noerr( err = MusicSequenceGetIndTrack(*seq, FIX2INT(key), &track), fail );
+    require_noerr( err = MusicSequenceGetIndTrack(*seq, FIX2INT(rb_key), track), fail );
     return track_internal_new(rb_seq, track);
     
     fail:
     if (err == kAudioToolboxErr_TrackIndexError)
-      rb_raise(rb_eRangeError, "Index is out-of-bounds.");
+        rb_raise(rb_eRangeError, "Index is out-of-bounds.");
     else
-      rb_raise(rb_eRuntimeError, "MusicSequenceGetIndTrack() failed with %i.", (int) err);
+        rb_raise(rb_eRuntimeError, "MusicSequenceGetIndTrack() failed with %i.", (int) err);
 }
 
 static VALUE
@@ -381,18 +405,32 @@ tracks_index (VALUE self, VALUE rb_track)
                     rb_funcall(rb_track, rb_intern("class"), 0)))
         rb_raise(rb_eArgError, "Expected arg to be a MusicTrack.");
     
-    MusicSequence *seq;
+    MusicSequence *seq = tracks_get_seq(self);
     MusicTrack *track;
     UInt32 i;
     OSStatus err;
     
     Data_Get_Struct(rb_track, MusicTrack, track);
-    seq = tracks_get_seq(self);
     require_noerr( err = MusicSequenceGetTrackIndex(*seq, *track, &i), fail );
     return UINT2NUM(i);
     
     fail:
     rb_raise(rb_eRangeError, "MusicSequenceGetTrackIndex() failed with %i.", (int) err);
+}
+
+static VALUE
+tracks_tempo (VALUE self)
+{
+    MusicSequence *seq = tracks_get_seq(self);
+    VALUE rb_seq = rb_iv_get(self, "@sequence");
+    MusicTrack *track = ALLOC(MusicTrack);
+    OSStatus err;
+    
+    require_noerr( err = MusicSequenceGetTempoTrack(*seq, track), fail );
+    return track_internal_new(rb_seq, track);
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceGetTempoTrack() failed with %i.", (int) err);
 }
 
 /* MIDINoteMessage */
@@ -601,13 +639,15 @@ Init_music_player ()
     rb_define_method(rb_cMusicTrack, "initialize", track_init, 1);
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
     rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
-
+    rb_define_method(rb_cMusicTrack, "add_extended_tempo_event", track_add_extended_tempo_event, 2);
+    
     /* AudioToolbox::MusicSequence#tracks proxy */
     rb_cMusicTracks = rb_define_class_under(rb_cMusicSequence, "Tracks", rb_cObject);
     rb_define_method(rb_cMusicTracks, "initialize", tracks_init, 1);
     rb_define_method(rb_cMusicTracks, "size", tracks_size, 0);
     rb_define_method(rb_cMusicTracks, "[]", tracks_ind, 1);
     rb_define_method(rb_cMusicTracks, "index", tracks_index, 1);
+    rb_define_method(rb_cMusicTracks, "tempo", tracks_tempo, 0);
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);
@@ -626,4 +666,7 @@ Init_music_player ()
     rb_define_method(rb_cMIDIChannelMessage, "status", midi_channel_message_status, 0);
     rb_define_method(rb_cMIDIChannelMessage, "data1", midi_channel_message_data1, 0);
     rb_define_method(rb_cMIDIChannelMessage, "data2", midi_channel_message_data2, 0);
+
+    /* AudioToolbox::ExtendedTempoEvent */
+    rb_cExtendedTempoEvent = rb_define_class_under(rb_mAudioToolbox, "ExtendedTempoEvent", rb_cObject);
 }

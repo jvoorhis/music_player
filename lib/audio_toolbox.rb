@@ -98,4 +98,16 @@ module AudioToolbox
             :data1  => value)
     end
   end
+  
+  class ExtendedTempoEvent
+    attr :bpm
+    
+    def add(time, track)
+      track.add_extended_tempo_event(time, @bpm)
+    end
+    
+    def initialize(opts)
+      @bpm = opts[:bpm]
+    end
+  end
 end
