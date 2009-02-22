@@ -361,22 +361,22 @@ midi_note_message_init (VALUE self, VALUE rb_opts)
 
     Data_Get_Struct(self, MIDINoteMessage, msg);
 
-    rb_chn = rb_hash_aref(rb_opts, ID2SYM(rb_intern("channel")));
+    rb_chn = rb_hash_aref(rb_opts, CSTR2SYM("channel"));
     msg->channel = FIXNUM_P(rb_chn) ? FIX2UINT(rb_chn) : 1;
     
-    rb_note = rb_hash_aref(rb_opts, ID2SYM(rb_intern("note")));
+    rb_note = rb_hash_aref(rb_opts, CSTR2SYM("note"));
     if (FIXNUM_P(rb_note))
         msg->note = FIX2UINT(rb_note);
     else
         rb_raise(rb_eArgError, ":note is required.");
     
-    rb_vel = rb_hash_aref(rb_opts, ID2SYM(rb_intern("velocity")));
+    rb_vel = rb_hash_aref(rb_opts, CSTR2SYM("velocity"));
     msg->velocity = FIXNUM_P(rb_vel) ? FIX2UINT(rb_vel) : 64;
     
-    rb_rel_vel = rb_hash_aref(rb_opts, ID2SYM(rb_intern("release_velocity")));
+    rb_rel_vel = rb_hash_aref(rb_opts, CSTR2SYM("release_velocity"));
     msg->releaseVelocity = FIXNUM_P(rb_rel_vel) ? FIX2UINT(rb_rel_vel) : 0;
     
-    rb_dur = rb_hash_aref(rb_opts, ID2SYM(rb_intern("duration")));
+    rb_dur = rb_hash_aref(rb_opts, CSTR2SYM("duration"));
     msg->duration = (MusicTimeStamp) (PRIM_NUM_P(rb_dur)) ? NUM2DBL(rb_dur) : 1.0;
     
     return self;
@@ -437,16 +437,16 @@ midi_channel_message_init (VALUE self, VALUE rb_opts)
     
     Data_Get_Struct(self, MIDIChannelMessage, msg);
     
-    rb_status = rb_hash_aref(rb_opts, ID2SYM(rb_intern("status")));
+    rb_status = rb_hash_aref(rb_opts, CSTR2SYM("status"));
     if (!FIXNUM_P(rb_status))
         rb_raise(rb_eArgError, ":status is required.");
     else
         msg->status = NUM2DBL(rb_status);
     
-    rb_data1 = rb_hash_aref(rb_opts, ID2SYM(rb_intern("data1")));
+    rb_data1 = rb_hash_aref(rb_opts, CSTR2SYM("data1"));
     if (!NIL_P(rb_data1)) msg->data1 = (UInt8) FIX2INT(rb_data1);
     
-    rb_data2 = rb_hash_aref(rb_opts, ID2SYM(rb_intern("data2")));
+    rb_data2 = rb_hash_aref(rb_opts, CSTR2SYM("data2"));
     if (!NIL_P(rb_data2)) msg->data2 = (UInt8) FIX2INT(rb_data2);
     
     return self;
