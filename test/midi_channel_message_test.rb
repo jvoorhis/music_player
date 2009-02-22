@@ -11,9 +11,9 @@ class MIDIChannelMessageHelper < Test::Unit::TestCase
   
   def test_accessors
     msg = MIDIChannelMessage.new( # All arbitrary, non-default values.
-            :status => status=42,
-            :data1 => data1=43,
-            :data2 => data2=44)
+            :status => status = 42,
+            :data1  => data1  = 43,
+            :data2  => data2  = 44)
     assert_equal status, msg.status
     assert_equal data1, msg.data1
     assert_equal data2, msg.data2

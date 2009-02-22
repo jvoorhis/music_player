@@ -1,3 +1,2 @@
-$:.unshift '../ext'
-require 'music_player'
+require 'audio_toolbox'
 require 'test/unit'
