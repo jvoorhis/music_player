@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), 'test_helper.rb')
 
-class MIDINoteMessageHelper < Test::Unit::TestCase
+class MIDINoteMessageTest < Test::Unit::TestCase
   include AudioToolbox
   
   def test_initialization
@@ -24,14 +24,14 @@ class MIDINoteMessageHelper < Test::Unit::TestCase
   end
 
   def test_accessors
-    msg = MIDINoteMessage.new( # All arbitrary, non-default values.
-            :note             => note             = 50,
-            :velocity         => velocity         = 50,
-            :release_velocity => release_velocity = 30,
-            :duration         => duration         = 2.0)
-    assert_equal note, msg.note
-    assert_equal velocity, msg.velocity
-    assert_equal release_velocity, msg.release_velocity
-    assert_equal duration, msg.duration
+    msg = MIDINoteMessage.new(
+            :note             => 50,
+            :velocity         => 40,
+            :release_velocity => 30,
+            :duration         => 2.0)
+    assert_equal 50, msg.note
+    assert_equal 40, msg.velocity
+    assert_equal 30, msg.release_velocity
+    assert_equal 2.0, msg.duration
   end
 end

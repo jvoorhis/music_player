@@ -2,8 +2,6 @@ require File.join(File.dirname(__FILE__), 'test_helper.rb')
 require 'music_player'
 
 class MusicPlayerTest < Test::Unit::TestCase
-  include AudioToolbox
-  
   def setup
     @player = MusicPlayer.new
     @sequence = MusicSequence.new
