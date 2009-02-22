@@ -2,6 +2,17 @@ $:.unshift File.join(File.dirname(__FILE__), '../ext')
 require 'music_player.bundle'
 
 module AudioToolbox
+  class MusicTrack
+    def add(time, message)
+      message.add(time, self)
+    end
+  end
+  
+  class MIDINoteMessage
+    def add(time, track)
+      track.add_midi_note_message(time, self)
+    end
+  end
   
   class MIDIChannelMessage
     def channel
@@ -10,6 +21,10 @@ module AudioToolbox
     
     def mask
       raise NotImplementedError, "Subclass responsibility."
+    end
+    
+    def add(time, track)
+      track.add_midi_channel_message(time, self)
     end
     
     protected

@@ -5,11 +5,11 @@ class MusicPlayerTest < Test::Unit::TestCase
     @player = MusicPlayer.new
     @sequence = MusicSequence.new
     @track = MusicTrack.new(@sequence)
-    @track.add_midi_channel_message 0.0,
+    @track.add 0.0,
         MIDIProgramChangeMessage.new(:channel => 0, :program => 1)
-    @track.add_midi_note_message 0.0, MIDINoteMessage.new(:note => 60)
-    @track.add_midi_note_message 1.0, MIDINoteMessage.new(:note => 64)
-    @track.add_midi_note_message 2.0, MIDINoteMessage.new(:note => 67)
+    @track.add 0.0, MIDINoteMessage.new(:note => 60)
+    @track.add 1.0, MIDINoteMessage.new(:note => 64)
+    @track.add 2.0, MIDINoteMessage.new(:note => 67)
     @player.sequence = @sequence
   end
   

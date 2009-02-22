@@ -10,7 +10,7 @@ static VALUE rb_mAudioToolbox = Qnil;
 static VALUE rb_cMusicPlayer = Qnil;
 static VALUE rb_cMusicSequence = Qnil;
 static VALUE rb_cMusicTrack = Qnil;
-static VALUE rb_cMusicTracksProxy = Qnil;
+static VALUE rb_cMusicTracks = Qnil;
 static VALUE rb_cMIDINoteMessage = Qnil;
 static VALUE rb_cMIDIChannelMessage = Qnil;
 
@@ -41,7 +41,7 @@ player_free (MusicPlayer *player)
     return;
     
     fail:
-    rb_warning("DisposeMusicPlayer() failed with OSStatus %i.", (SInt32) err);
+    rb_warning("DisposeMusicPlayer() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -57,7 +57,7 @@ player_new (VALUE class)
     return rb_player;
     
     fail:
-    rb_raise(rb_eRuntimeError, "NewMusicPlayer() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "NewMusicPlayer() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -72,7 +72,7 @@ player_is_playing (VALUE self)
     return playing ? Qtrue : Qfalse;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerIsPlaying() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerIsPlaying() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -96,7 +96,7 @@ player_set_sequence (VALUE self, VALUE rb_seq)
     return rb_seq;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerSetSequence() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerSetSequence() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -110,7 +110,7 @@ player_start (VALUE self)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerStart() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerStart() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -124,7 +124,7 @@ player_stop (VALUE self)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerStop() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerStop() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -139,7 +139,7 @@ player_get_time (VALUE self)
     return rb_float_new((Float64) ts);
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerGetTime() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerGetTime() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -158,7 +158,7 @@ player_set_time (VALUE self, VALUE rb_ts)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerSetTime() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerSetTime() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -173,7 +173,7 @@ player_get_play_rate_scalar (VALUE self)
     return rb_float_new(scalar);
 
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerGetPlayRateScalar() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerGetPlayRateScalar() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -192,7 +192,7 @@ player_set_play_rate_scalar (VALUE self, VALUE rb_scalar)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerSetPlayRateScalar() failed with %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicPlayerSetPlayRateScalar() failed with %i.", (int) err);
 }
 
 /* Sequence defns */
@@ -205,7 +205,7 @@ sequence_free (MusicSequence *seq)
     return;
     
     fail:
-    rb_warning("DisposeMusicSequence() failed with %i.", (SInt32) err);
+    rb_warning("DisposeMusicSequence() failed with %i.", (int) err);
 }
 
 static VALUE
@@ -221,7 +221,7 @@ sequence_new (VALUE class)
     return rb_seq;
     
     fail:
-    rb_raise(rb_eRuntimeError, "NewMusicSequence() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "NewMusicSequence() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -238,7 +238,7 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceSetMIDIEndpoint() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicSequenceSetMIDIEndpoint() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -246,24 +246,7 @@ sequence_tracks (VALUE self)
 {
     MusicSequence *seq;
     Data_Get_Struct(self, MusicSequence, seq);
-    return Data_Wrap_Struct(rb_cMusicTracksProxy, 0, 0, seq);
-}
-
-/* MusicSequence#Tracks proxy defns */
-
-static VALUE
-tracks_count (VALUE self)
-{
-    MusicSequence *seq;
-    UInt32 track_count;
-    OSStatus err;
-    
-    Data_Get_Struct(self, MusicSequence, seq);
-    require_noerr( err = MusicSequenceGetTrackCount(*seq, &track_count), fail );
-    return UINT2NUM(track_count);
-    
-    fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceGetTrackCount() failed with %i.", (SInt32) err);
+    return rb_funcall(rb_cMusicTracks, rb_intern("new"), 1, self);
 }
 
 /* Track defns */
@@ -273,6 +256,16 @@ track_init (VALUE self, VALUE rb_seq)
 {
     rb_iv_set(self, "@sequence", rb_seq);
     return self;
+}
+
+static VALUE
+track_internal_new (VALUE seq, MusicTrack track)
+{
+    VALUE rb_track, argv[1];
+    rb_track = Data_Wrap_Struct(rb_cMusicTrack, 0, 0, track);
+    argv[0] = seq;
+    rb_obj_call_init(rb_track, 1, argv);
+    return rb_track;
 }
 
 static VALUE
@@ -291,7 +284,7 @@ track_new (VALUE class, VALUE rb_seq)
     return rb_track;
 
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceNewTrack() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicSequenceNewTrack() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -308,7 +301,7 @@ track_add_midi_note_message (VALUE self, VALUE rb_at, VALUE rb_msg)
     return Qnil;
 
     fail:
-    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDINoteEvent() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDINoteEvent() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -325,7 +318,81 @@ track_add_midi_channel_message (VALUE self, VALUE rb_at, VALUE rb_msg)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDIChannelEvent() failed with OSStatus %i.", (SInt32) err);
+    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDIChannelEvent() failed with OSStatus %i.", (int) err);
+}
+
+/* MusicSequence#Tracks proxy defns */
+
+static VALUE
+tracks_init (VALUE self, VALUE seq)
+{
+    rb_iv_set(self, "@sequence", seq);
+    return self;
+}
+
+MusicSequence*
+tracks_get_seq (VALUE tracks)
+{
+    MusicSequence *seq;
+    VALUE rb_seq = rb_iv_get(tracks, "@sequence");
+    Data_Get_Struct(rb_seq, MusicSequence, seq);
+    return seq;
+}
+
+static VALUE
+tracks_size (VALUE self)
+{
+    MusicSequence *seq;
+    UInt32 track_count;
+    OSStatus err;
+    
+    seq = tracks_get_seq(self);
+    require_noerr( err = MusicSequenceGetTrackCount(*seq, &track_count), fail );
+    return UINT2NUM(track_count);
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceGetTrackCount() failed with %i.", (int) err);
+}
+
+static VALUE
+tracks_ind (VALUE self, VALUE key)
+{
+    if (!FIXNUM_P(key)) rb_raise(rb_eArgError, "Expected key to be a Fixnum.");
+    MusicSequence *seq;
+    MusicTrack track;
+    VALUE rb_seq = rb_iv_get(self, "@sequence");
+    OSStatus err;
+    
+    Data_Get_Struct(rb_seq, MusicSequence, seq);
+    require_noerr( err = MusicSequenceGetIndTrack(*seq, FIX2INT(key), &track), fail );
+    return track_internal_new(rb_seq, track);
+    
+    fail:
+    if (err == kAudioToolboxErr_TrackIndexError)
+      rb_raise(rb_eRangeError, "Index is out-of-bounds.");
+    else
+      rb_raise(rb_eRuntimeError, "MusicSequenceGetIndTrack() failed with %i.", (int) err);
+}
+
+static VALUE
+tracks_index (VALUE self, VALUE rb_track)
+{
+    if (!rb_funcall(rb_cMusicTrack, rb_intern("=="), 1,
+                    rb_funcall(rb_track, rb_intern("class"), 0)))
+        rb_raise(rb_eArgError, "Expected arg to be a MusicTrack.");
+    
+    MusicSequence *seq;
+    MusicTrack *track;
+    UInt32 i;
+    OSStatus err;
+    
+    Data_Get_Struct(rb_track, MusicTrack, track);
+    seq = tracks_get_seq(self);
+    require_noerr( err = MusicSequenceGetTrackIndex(*seq, *track, &i), fail );
+    return UINT2NUM(i);
+    
+    fail:
+    rb_raise(rb_eRangeError, "MusicSequenceGetTrackIndex() failed with %i.", (int) err);
 }
 
 /* MIDINoteMessage */
@@ -535,9 +602,12 @@ Init_music_player ()
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
     rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
 
-    /* AudioToolbox::MusicSequence#tracks Proxy */
-    rb_cMusicTracksProxy = rb_define_class_under(rb_cMusicSequence, "TracksProxy", rb_cObject);
-    rb_define_method(rb_cMusicTracksProxy, "size", tracks_count, 0);
+    /* AudioToolbox::MusicSequence#tracks proxy */
+    rb_cMusicTracks = rb_define_class_under(rb_cMusicSequence, "Tracks", rb_cObject);
+    rb_define_method(rb_cMusicTracks, "initialize", tracks_init, 1);
+    rb_define_method(rb_cMusicTracks, "size", tracks_size, 0);
+    rb_define_method(rb_cMusicTracks, "[]", tracks_ind, 1);
+    rb_define_method(rb_cMusicTracks, "index", tracks_index, 1);
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);
