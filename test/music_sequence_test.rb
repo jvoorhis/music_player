@@ -31,8 +31,15 @@ class MusicSequenceTest < Test::Unit::TestCase
     track = MusicTrack.new(seq)
     assert_raise(RangeError) { @sequence.tracks.index(track) }
   end
-
+  
   def test_tempo
     assert_kind_of MusicTrack, @sequence.tracks.tempo
+  end
+  
+  def test_delete
+    assert_equal 1, @sequence.tracks.size
+    trk = @sequence.tracks[0]
+    @sequence.tracks.delete(trk)
+    assert_equal 0, @sequence.tracks.size
   end
 end

@@ -376,7 +376,7 @@ tracks_size (VALUE self)
     return UINT2NUM(track_count);
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceGetTrackCount() failed with %i.", (int) err);
+    rb_raise(rb_eRuntimeError, "MusicSequenceGetTrackCount() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -395,7 +395,7 @@ tracks_ind (VALUE self, VALUE rb_key)
     if (err == kAudioToolboxErr_TrackIndexError)
         rb_raise(rb_eRangeError, "Index is out-of-bounds.");
     else
-        rb_raise(rb_eRuntimeError, "MusicSequenceGetIndTrack() failed with %i.", (int) err);
+        rb_raise(rb_eRuntimeError, "MusicSequenceGetIndTrack() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -415,7 +415,7 @@ tracks_index (VALUE self, VALUE rb_track)
     return UINT2NUM(i);
     
     fail:
-    rb_raise(rb_eRangeError, "MusicSequenceGetTrackIndex() failed with %i.", (int) err);
+    rb_raise(rb_eRangeError, "MusicSequenceGetTrackIndex() failed with OSStatus %i.", (int) err);
 }
 
 static VALUE
@@ -430,7 +430,22 @@ tracks_tempo (VALUE self)
     return track_internal_new(rb_seq, track);
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceGetTempoTrack() failed with %i.", (int) err);
+    rb_raise(rb_eRuntimeError, "MusicSequenceGetTempoTrack() failed with OSStatus %i.", (int) err);
+}
+
+static VALUE
+tracks_delete (VALUE self, VALUE rb_track)
+{
+    MusicSequence *seq = tracks_get_seq(self);
+    MusicTrack *track;
+    OSStatus err;
+    
+    Data_Get_Struct(rb_track, MusicTrack, track);
+    require_noerr( err = MusicSequenceDisposeTrack(*seq, *track), fail );
+    return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceDisposeTrack() failed with OSStatus %i.", (int) err);
 }
 
 /* MIDINoteMessage */
@@ -648,6 +663,7 @@ Init_music_player ()
     rb_define_method(rb_cMusicTracks, "[]", tracks_ind, 1);
     rb_define_method(rb_cMusicTracks, "index", tracks_index, 1);
     rb_define_method(rb_cMusicTracks, "tempo", tracks_tempo, 0);
+    rb_define_method(rb_cMusicTracks, "delete", tracks_delete, 1);
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);
