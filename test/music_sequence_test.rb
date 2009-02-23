@@ -43,3 +43,24 @@ class MusicSequenceTest < Test::Unit::TestCase
     assert_equal 0, @sequence.tracks.size
   end
 end
+
+class MusicSequenceTracksEnumerableTest < Test::Unit::TestCase
+  def setup
+    @sequence = MusicSequence.new
+    @track1 = MusicTrack.new(@sequence)
+    @track2 = MusicTrack.new(@sequence)
+    @track3 = MusicTrack.new(@sequence)
+  end
+  
+  def test_each
+    trks = []
+    @sequence.tracks.each do |trk|
+      trks << trk
+    end
+    # Separate references can be modified...
+    trks.first.add(0.0, MIDINoteMessage.new(:note => 60))
+    # ...independently.
+    @track1.add(1.0, MIDINoteMessage.new(:note => 72))
+    assert_equal [@track1, @track2, @track3], trks
+  end
+end

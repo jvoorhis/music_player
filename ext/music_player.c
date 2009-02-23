@@ -347,6 +347,22 @@ track_add_extended_tempo_event (VALUE self, VALUE rb_at, VALUE rb_bpm)
     rb_raise(rb_eRuntimeError, "MusicTrackNewExtendedTempoEvent() failed with OSStatus %i.", (int) err);
 }
 
+static VALUE
+track_eq (VALUE self, VALUE rb_other)
+{
+    if (!RTEST(rb_funcall(rb_funcall(self, rb_intern("class"), 0),
+                          rb_intern("=="), 1,
+                          rb_funcall(rb_other, rb_intern("class"), 0))))
+        return Qfalse;
+    MusicTrack *my_track, *other_track;
+    Data_Get_Struct(self, MusicTrack, my_track);
+    Data_Get_Struct(rb_other, MusicTrack, other_track);
+    if (*my_track == *other_track)
+        return Qtrue;
+    else
+        return Qfalse;
+}
+
 /* MusicSequence#Tracks proxy defns */
 
 static VALUE
@@ -655,6 +671,7 @@ Init_music_player ()
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
     rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
     rb_define_method(rb_cMusicTrack, "add_extended_tempo_event", track_add_extended_tempo_event, 2);
+    rb_define_method(rb_cMusicTrack, "==", track_eq, 1);
     
     /* AudioToolbox::MusicSequence#tracks proxy */
     rb_cMusicTracks = rb_define_class_under(rb_cMusicSequence, "Tracks", rb_cObject);
