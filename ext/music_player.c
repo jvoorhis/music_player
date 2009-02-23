@@ -248,6 +248,59 @@ sequence_tracks (VALUE self)
     return rb_funcall(rb_cMusicTracks, rb_intern("new"), 1, self);
 }
 
+static VALUE
+sequence_get_type (VALUE self)
+{
+    MusicSequence *seq;
+    MusicSequenceType type;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicSequence, seq);
+    require_noerr( err = MusicSequenceGetSequenceType(*seq, &type), fail );
+    
+    VALUE rb_type = Qnil;
+    switch (type) {
+    case kMusicSequenceType_Beats:
+        rb_type = CSTR2SYM("beat");
+        break;
+    case kMusicSequenceType_Seconds:
+        rb_type = CSTR2SYM("secs");
+        break;
+    case kMusicSequenceType_Samples:
+        rb_type = CSTR2SYM("samp");
+        break;
+    default:
+        rb_raise(rb_eRuntimeError, "Unrecognized sequence type.");
+    }
+    return rb_type;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceGetSequenceType() failed with OSStatus %i.", (int) err);
+}
+
+static VALUE
+sequence_set_type (VALUE self, VALUE rb_type)
+{
+    MusicSequence *seq;
+    MusicSequenceType type;
+    if (rb_type == CSTR2SYM("beat"))
+        type = kMusicSequenceType_Beats;
+    else if (rb_type == CSTR2SYM("secs"))
+        type = kMusicSequenceType_Seconds;
+    else if (rb_type == CSTR2SYM("samp"))
+        type = kMusicSequenceType_Samples;
+    else
+        rb_raise(rb_eArgError, "Expected :type to be one of :beat, :secs, :samp.");
+    
+    Data_Get_Struct(self, MusicSequence, seq);
+    OSStatus err;
+    require_noerr( err = MusicSequenceSetSequenceType(*seq, type), fail );
+    return Qnil;
+    
+    fail:
+    rb_raise(rb_eRuntimeError, "MusicSequenceGetSequenceType() failed with OSStatus %i.", (int) err);
+}
+
 /* Track defns */
 
 static VALUE
@@ -350,9 +403,7 @@ track_add_extended_tempo_event (VALUE self, VALUE rb_at, VALUE rb_bpm)
 static VALUE
 track_eq (VALUE self, VALUE rb_other)
 {
-    if (!RTEST(rb_funcall(rb_funcall(self, rb_intern("class"), 0),
-                          rb_intern("=="), 1,
-                          rb_funcall(rb_other, rb_intern("class"), 0))))
+    if (rb_class_of(self) != rb_class_of(rb_other))
         return Qfalse;
     MusicTrack *my_track, *other_track;
     Data_Get_Struct(self, MusicTrack, my_track);
@@ -417,8 +468,7 @@ tracks_ind (VALUE self, VALUE rb_key)
 static VALUE
 tracks_index (VALUE self, VALUE rb_track)
 {
-    if (!rb_funcall(rb_cMusicTrack, rb_intern("=="), 1,
-                    rb_funcall(rb_track, rb_intern("class"), 0)))
+    if (rb_cMusicTrack != rb_class_of(rb_track))
         rb_raise(rb_eArgError, "Expected arg to be a MusicTrack.");
     
     MusicSequence *seq = tracks_get_seq(self);
@@ -663,6 +713,8 @@ Init_music_player ()
     rb_define_singleton_method(rb_cMusicSequence, "new", sequence_new, 0);
     rb_define_method(rb_cMusicSequence, "midi_endpoint=", sequence_set_midi_endpoint, 1);
     rb_define_method(rb_cMusicSequence, "tracks", sequence_tracks, 0);
+    rb_define_method(rb_cMusicSequence, "type", sequence_get_type, 0);
+    rb_define_method(rb_cMusicSequence, "type=", sequence_set_type, 1);
     
     /* AudioToolbox::MusicTrack */
     rb_cMusicTrack = rb_define_class_under(rb_mAudioToolbox, "MusicTrack", rb_cObject);

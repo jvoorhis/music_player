@@ -14,6 +14,15 @@ class MusicSequenceTest < Test::Unit::TestCase
     @track.add 2.0, MIDINoteMessage.new(:note => 67)
   end
   
+  def test_type
+    assert_equal :beat, @sequence.type, "Expected default type of :beat."
+    seq = MusicSequence.new
+    seq.type = :samp
+    assert_equal :samp, seq.type
+    seq.type = :secs
+    assert_equal :secs, seq.type
+  end
+  
   def test_size
     assert_equal 1, @sequence.tracks.size
   end
@@ -57,9 +66,8 @@ class MusicSequenceTracksEnumerableTest < Test::Unit::TestCase
     @sequence.tracks.each do |trk|
       trks << trk
     end
-    # Separate references can be modified...
+    # Separate references can be modified independently.
     trks.first.add(0.0, MIDINoteMessage.new(:note => 60))
-    # ...independently.
     @track1.add(1.0, MIDINoteMessage.new(:note => 72))
     assert_equal [@track1, @track2, @track3], trks
   end
