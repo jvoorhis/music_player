@@ -1,6 +1,6 @@
 require 'mkmf'
 
-$CFLAGS << ' -Wall -Werror '
+$CFLAGS << ' -Wall -Werror -O3 '
 $LDFLAGS = '-framework AudioToolbox -framework CoreMIDI'
 
 extname = 'music_player'

@@ -303,6 +303,29 @@ sequence_set_type (VALUE self, VALUE rb_type)
     rb_raise(rb_eRuntimeError, "MusicSequenceGetSequenceType() failed with OSStatus %i.", (int) err);
 }
 
+static VALUE
+sequence_save (VALUE self, VALUE rb_path)
+{
+    if (!T_STRING == TYPE(rb_path))
+        rb_raise(rb_eArgError, "Expected path to be given as a String.");
+    
+    VALUE rb_abs_path = rb_file_expand_path(rb_path, Qnil);
+    char *path = StringValueCStr(rb_abs_path);
+    CFURLRef url = CFURLCreateFromFileSystemRepresentation(NULL, (const UInt8 *) path, strlen(path), false);
+    MusicSequence *seq;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicSequence, seq);
+    require_noerr( err = MusicSequenceFileCreate(*seq, url, kMusicSequenceFile_MIDIType, kMusicSequenceFileFlags_EraseFile, 0), fail);
+    CFRelease(url);
+    
+    return Qnil;
+    
+    fail:
+    CFRelease(url);
+    rb_raise(rb_eRuntimeError, "MusicSequenceFileCreate() failed with OSStatus %i.", (int) err);
+}
+
 /* Track defns */
 
 void
@@ -723,6 +746,7 @@ Init_music_player ()
     rb_define_method(rb_cMusicSequence, "tracks", sequence_tracks, 0);
     rb_define_method(rb_cMusicSequence, "type", sequence_get_type, 0);
     rb_define_method(rb_cMusicSequence, "type=", sequence_set_type, 1);
+    rb_define_method(rb_cMusicSequence, "save", sequence_save, 1);
     
     /* AudioToolbox::MusicTrack */
     rb_cMusicTrack = rb_define_class_under(rb_mAudioToolbox, "MusicTrack", rb_cObject);
