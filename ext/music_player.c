@@ -524,46 +524,6 @@ tracks_delete (VALUE self, VALUE rb_track)
 
 /* MIDINoteMessage */
 
-static VALUE
-midi_note_message_channel (VALUE self)
-{
-    MIDINoteMessage *msg;
-    Data_Get_Struct(self, MIDINoteMessage, msg);
-    return UINT2NUM(msg->channel);
-}
-
-static VALUE
-midi_note_message_note (VALUE self)
-{
-    MIDINoteMessage *msg;
-    Data_Get_Struct(self, MIDINoteMessage, msg);
-    return UINT2NUM(msg->note);
-}
-
-static VALUE
-midi_note_message_velocity (VALUE self)
-{
-    MIDINoteMessage *msg;
-    Data_Get_Struct(self, MIDINoteMessage, msg);
-    return UINT2NUM(msg->velocity);
-}
-
-static VALUE
-midi_note_message_release_velocity (VALUE self)
-{
-    MIDINoteMessage *msg;
-    Data_Get_Struct(self, MIDINoteMessage, msg);
-    return UINT2NUM(msg->releaseVelocity);
-}
-
-static VALUE
-midi_note_message_duration (VALUE self)
-{
-    MIDINoteMessage *msg;
-    Data_Get_Struct(self, MIDINoteMessage, msg);
-    return UINT2NUM(msg->duration);
-}
-
 static void
 midi_note_message_free (MIDINoteMessage *msg)
 {
@@ -614,31 +574,47 @@ midi_note_message_new (VALUE class, VALUE rb_opts)
     return rb_msg;
 }
 
+static VALUE
+midi_note_message_channel (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->channel);
+}
+
+static VALUE
+midi_note_message_note (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->note);
+}
+
+static VALUE
+midi_note_message_velocity (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->velocity);
+}
+
+static VALUE
+midi_note_message_release_velocity (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->releaseVelocity);
+}
+
+static VALUE
+midi_note_message_duration (VALUE self)
+{
+    MIDINoteMessage *msg;
+    Data_Get_Struct(self, MIDINoteMessage, msg);
+    return UINT2NUM(msg->duration);
+}
+
 /* MIDIChannelMessage */
-
-static VALUE
-midi_channel_message_status (VALUE self)
-{
-    MIDIChannelMessage *msg;
-    Data_Get_Struct(self, MIDIChannelMessage, msg);
-    return UINT2NUM(msg->status);
-}
-
-static VALUE
-midi_channel_message_data1 (VALUE self)
-{
-    MIDIChannelMessage *msg;
-    Data_Get_Struct(self, MIDIChannelMessage, msg);
-    return UINT2NUM(msg->data1);
-}
-
-static VALUE
-midi_channel_message_data2 (VALUE self)
-{
-    MIDIChannelMessage *msg;
-    Data_Get_Struct(self, MIDIChannelMessage, msg);
-    return UINT2NUM(msg->data2);
-}
 
 static void
 midi_channel_message_free (MIDIChannelMessage *msg)
@@ -682,6 +658,30 @@ midi_channel_message_new (VALUE class, VALUE rb_opts)
     argv[0] = rb_opts;
     rb_obj_call_init(rb_msg, 1, argv);
     return rb_msg;
+}
+
+static VALUE
+midi_channel_message_status (VALUE self)
+{
+    MIDIChannelMessage *msg;
+    Data_Get_Struct(self, MIDIChannelMessage, msg);
+    return UINT2NUM(msg->status);
+}
+
+static VALUE
+midi_channel_message_data1 (VALUE self)
+{
+    MIDIChannelMessage *msg;
+    Data_Get_Struct(self, MIDIChannelMessage, msg);
+    return UINT2NUM(msg->data1);
+}
+
+static VALUE
+midi_channel_message_data2 (VALUE self)
+{
+    MIDIChannelMessage *msg;
+    Data_Get_Struct(self, MIDIChannelMessage, msg);
+    return UINT2NUM(msg->data2);
 }
 
 /* Initialize extension */
