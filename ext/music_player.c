@@ -39,6 +39,7 @@ player_free (MusicPlayer *player)
 {
     OSStatus err;
     require_noerr( err = DisposeMusicPlayer(*player), fail );
+    free(player);
     return;
     
     fail:
@@ -203,6 +204,7 @@ sequence_free (MusicSequence *seq)
 {
     OSStatus err;
     require_noerr( err = DisposeMusicSequence(*seq), fail );
+    free(seq);
     return;
     
     fail:
@@ -303,6 +305,12 @@ sequence_set_type (VALUE self, VALUE rb_type)
 
 /* Track defns */
 
+void
+track_free (MusicTrack *track)
+{
+    free(track);
+}
+
 static VALUE
 track_init (VALUE self, VALUE rb_seq)
 {
@@ -314,7 +322,7 @@ static VALUE
 track_internal_new (VALUE rb_seq, MusicTrack *track)
 {
     VALUE rb_track, argv[1];
-    rb_track = Data_Wrap_Struct(rb_cMusicTrack, 0, 0, track);
+    rb_track = Data_Wrap_Struct(rb_cMusicTrack, 0, track_free, track);
     argv[0] = rb_seq;
     rb_obj_call_init(rb_track, 1, argv);
     return rb_track;
@@ -330,7 +338,7 @@ track_new (VALUE class, VALUE rb_seq)
     
     Data_Get_Struct(rb_seq, MusicSequence, seq);
     require_noerr( err = MusicSequenceNewTrack(*seq, track), fail );
-    rb_track = Data_Wrap_Struct(class, 0, 0, track);
+    rb_track = Data_Wrap_Struct(class, 0, track_free, track);
     argv[0] = rb_seq;
     rb_obj_call_init(rb_track, 1, argv);
     return rb_track;
