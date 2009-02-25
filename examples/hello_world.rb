@@ -18,8 +18,6 @@ track.add 3.0, MIDINoteMessage.new(:note => 64, :velocity => 110, :duration => 2
 track.add 3.0, MIDINoteMessage.new(:note => 67, :velocity => 110, :duration => 2.0)
 track.add 3.0, MIDINoteMessage.new(:note => 72, :velocity => 110, :duration => 2.0)
 
-sequence.save("~/mytest.mid")
-
 player.start
 sleep 3
 player.stop
