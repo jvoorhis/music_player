@@ -10,7 +10,7 @@ static VALUE rb_mAudioToolbox = Qnil;
 static VALUE rb_cMusicPlayer = Qnil;
 static VALUE rb_cMusicSequence = Qnil;
 static VALUE rb_cMusicTrack = Qnil;
-static VALUE rb_cMusicTracks = Qnil;
+static VALUE rb_cMusicTrackCollection = Qnil;
 static VALUE rb_cMIDINoteMessage = Qnil;
 static VALUE rb_cMIDIChannelMessage = Qnil;
 static VALUE rb_cExtendedTempoEvent = Qnil;
@@ -247,7 +247,7 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
 static VALUE
 sequence_tracks (VALUE self)
 {
-    return rb_funcall(rb_cMusicTracks, rb_intern("new"), 1, self);
+    return rb_funcall(rb_cMusicTrackCollection, rb_intern("new"), 1, self);
 }
 
 static VALUE
@@ -758,13 +758,13 @@ Init_music_player ()
     rb_define_method(rb_cMusicTrack, "==", track_eq, 1);
     
     /* AudioToolbox::MusicSequence#tracks proxy */
-    rb_cMusicTracks = rb_define_class_under(rb_cMusicSequence, "Tracks", rb_cObject);
-    rb_define_method(rb_cMusicTracks, "initialize", tracks_init, 1);
-    rb_define_method(rb_cMusicTracks, "size", tracks_size, 0);
-    rb_define_method(rb_cMusicTracks, "[]", tracks_ind, 1);
-    rb_define_method(rb_cMusicTracks, "index", tracks_index, 1);
-    rb_define_method(rb_cMusicTracks, "tempo", tracks_tempo, 0);
-    rb_define_method(rb_cMusicTracks, "delete", tracks_delete, 1);
+    rb_cMusicTrackCollection = rb_define_class_under(rb_mAudioToolbox, "MusicTrackCollection", rb_cObject);
+    rb_define_method(rb_cMusicTrackCollection, "initialize", tracks_init, 1);
+    rb_define_method(rb_cMusicTrackCollection, "size", tracks_size, 0);
+    rb_define_method(rb_cMusicTrackCollection, "[]", tracks_ind, 1);
+    rb_define_method(rb_cMusicTrackCollection, "index", tracks_index, 1);
+    rb_define_method(rb_cMusicTrackCollection, "tempo", tracks_tempo, 0);
+    rb_define_method(rb_cMusicTrackCollection, "delete", tracks_delete, 1);
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);

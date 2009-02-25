@@ -2,13 +2,11 @@ $:.unshift File.join(File.dirname(__FILE__), '../ext')
 require 'music_player.bundle'
 
 module AudioToolbox
-  class MusicSequence
-    class Tracks
-      include Enumerable
-      
-      def each
-        0.upto(size-1) { |i| yield self[i] }
-      end
+  class MusicTrackCollection
+    include Enumerable
+    
+    def each
+      0.upto(size-1) { |i| yield self[i] }
     end
   end
   

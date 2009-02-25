@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__), 'test_helper.rb')
+require 'tempfile'
 
 class MusicSequenceTest < Test::Unit::TestCase
   def setup
@@ -23,16 +24,22 @@ class MusicSequenceTest < Test::Unit::TestCase
     assert_equal :secs, seq.type
   end
   
-  def test_size
+  def test_save_with_pathname
+    tmp = Tempfile.new('music_sequence_test.mid')
+    assert_nothing_raised { @sequence.save(tmp.path) }
+    assert File.exists?(tmp.path)
+  end
+  
+  def test_tracks_size
     assert_equal 1, @sequence.tracks.size
   end
   
-  def test_at_index
+  def test_tracks_at_index
     assert @sequence.tracks[0]
     assert_raise(RangeError) { @sequence.tracks[42] }
   end
   
-  def test_index
+  def test_tracks_index
     assert_equal 0, @sequence.tracks.index(@track)
     assert_raise(ArgumentError) { @sequence.tracks.index(0) }
     
@@ -41,11 +48,11 @@ class MusicSequenceTest < Test::Unit::TestCase
     assert_raise(RangeError) { @sequence.tracks.index(track) }
   end
   
-  def test_tempo
+  def test_tracks_tempo
     assert_kind_of MusicTrack, @sequence.tracks.tempo
   end
   
-  def test_delete
+  def test_tracks_delete
     assert_equal 1, @sequence.tracks.size
     trk = @sequence.tracks[0]
     @sequence.tracks.delete(trk)
