@@ -6,7 +6,7 @@ class DrumMachine
   def initialize
     @player   = MusicPlayer.new
     @sequence = MusicSequence.new
-    @track    = MusicTrack.new(@sequence)
+    @track    = @sequence.tracks.new
     @track.add(0.0, MIDIProgramChangeMessage.new(:channel => 10, :program => 26))
     @track.add(0.0, MIDIControlChangeMessage.new(:channel => 10, :number => 32, :value => 1))
     @player.sequence = @sequence
