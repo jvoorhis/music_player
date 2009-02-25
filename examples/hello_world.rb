@@ -1,4 +1,4 @@
-require 'audio_toolbox'
+require 'music_player'
 include AudioToolbox
 
 player = MusicPlayer.new

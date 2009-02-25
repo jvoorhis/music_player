@@ -1,4 +1,4 @@
-require 'audio_toolbox'
+require 'music_player'
 
 class DrumMachine
   include AudioToolbox
