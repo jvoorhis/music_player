@@ -6,6 +6,7 @@ MUST-HAVE FOR RELEASE
 - Track property support
 - Event iterator support
 - Better API for working with CoreMIDI destinations
+- Better examples
 
 API PUNCH LIST
 Excludes deprecated API calls.
