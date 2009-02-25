@@ -4,7 +4,7 @@ class MusicPlayerTest < Test::Unit::TestCase
   def setup
     @player = MusicPlayer.new
     @sequence = MusicSequence.new
-    @track = MusicTrack.new(@sequence)
+    @track = @sequence.tracks.new
     @track.add 0.0,
         MIDIProgramChangeMessage.new(:channel => 0, :program => 1)
     @track.add 0.0, MIDINoteMessage.new(:note => 60)

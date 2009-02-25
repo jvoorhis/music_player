@@ -1,16 +1,60 @@
 $:.unshift File.join(File.dirname(__FILE__), '../ext')
+require 'thread'
 require 'music_player.bundle'
 
 module AudioToolbox
+  class MusicSequence
+    def tracks
+      @tracks ||= MusicTrackCollection.new(self)
+    end
+  end
+  
   class MusicTrackCollection
     include Enumerable
+    
+    def initialize(sequence)
+      @sequence = sequence
+      @tracks   = []
+      @lock     = Mutex.new
+    end
     
     def each
       0.upto(size-1) { |i| yield self[i] }
     end
+    
+    def new
+      @lock.synchronize do
+        track = MusicTrack.send(:new, @sequence)
+        @tracks << track
+        track
+      end
+    end
+    
+    def [](index)
+      @lock.synchronize do
+        @tracks[index] ||= ind_internal(index)
+      end
+    end
+    
+    def delete(track)
+      @lock.synchronize do
+        delete_internal(track)
+        @tracks.delete(track)
+        track.freeze
+      end
+      nil
+    end
+    
+    def tempo
+      @tempo ||= tempo_internal
+    end
   end
   
   class MusicTrack
+    class << self
+      private :new
+    end
+    
     def add(time, message)
       message.add(time, self)
     end

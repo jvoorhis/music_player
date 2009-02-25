@@ -245,12 +245,6 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
 }
 
 static VALUE
-sequence_tracks (VALUE self)
-{
-    return rb_funcall(rb_cMusicTrackCollection, rb_intern("new"), 1, self);
-}
-
-static VALUE
 sequence_get_type (VALUE self)
 {
     MusicSequence *seq;
@@ -431,28 +425,7 @@ track_add_extended_tempo_event (VALUE self, VALUE rb_at, VALUE rb_bpm)
     rb_raise(rb_eRuntimeError, "MusicTrackNewExtendedTempoEvent() failed with OSStatus %i.", (int) err);
 }
 
-static VALUE
-track_eq (VALUE self, VALUE rb_other)
-{
-    if (rb_class_of(self) != rb_class_of(rb_other))
-        return Qfalse;
-    MusicTrack *my_track, *other_track;
-    Data_Get_Struct(self, MusicTrack, my_track);
-    Data_Get_Struct(rb_other, MusicTrack, other_track);
-    if (*my_track == *other_track)
-        return Qtrue;
-    else
-        return Qfalse;
-}
-
 /* MusicSequence#Tracks proxy defns */
-
-static VALUE
-tracks_init (VALUE self, VALUE rb_seq)
-{
-    rb_iv_set(self, "@sequence", rb_seq);
-    return self;
-}
 
 MusicSequence*
 tracks_get_seq (VALUE rb_tracks)
@@ -478,7 +451,7 @@ tracks_size (VALUE self)
 }
 
 static VALUE
-tracks_ind (VALUE self, VALUE rb_key)
+tracks_get_ind_track_internal (VALUE self, VALUE rb_key)
 {
     if (!FIXNUM_P(rb_key)) rb_raise(rb_eArgError, "Expected key to be a Fixnum.");
     MusicSequence *seq = tracks_get_seq(self);
@@ -516,7 +489,7 @@ tracks_index (VALUE self, VALUE rb_track)
 }
 
 static VALUE
-tracks_tempo (VALUE self)
+tracks_tempo_internal (VALUE self)
 {
     MusicSequence *seq = tracks_get_seq(self);
     VALUE rb_seq = rb_iv_get(self, "@sequence");
@@ -531,7 +504,7 @@ tracks_tempo (VALUE self)
 }
 
 static VALUE
-tracks_delete (VALUE self, VALUE rb_track)
+tracks_delete_internal (VALUE self, VALUE rb_track)
 {
     MusicSequence *seq = tracks_get_seq(self);
     MusicTrack *track;
@@ -743,7 +716,6 @@ Init_music_player ()
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);
     rb_define_singleton_method(rb_cMusicSequence, "new", sequence_new, 0);
     rb_define_method(rb_cMusicSequence, "midi_endpoint=", sequence_set_midi_endpoint, 1);
-    rb_define_method(rb_cMusicSequence, "tracks", sequence_tracks, 0);
     rb_define_method(rb_cMusicSequence, "type", sequence_get_type, 0);
     rb_define_method(rb_cMusicSequence, "type=", sequence_set_type, 1);
     rb_define_method(rb_cMusicSequence, "save", sequence_save, 1);
@@ -755,16 +727,14 @@ Init_music_player ()
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
     rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
     rb_define_method(rb_cMusicTrack, "add_extended_tempo_event", track_add_extended_tempo_event, 2);
-    rb_define_method(rb_cMusicTrack, "==", track_eq, 1);
     
     /* AudioToolbox::MusicSequence#tracks proxy */
     rb_cMusicTrackCollection = rb_define_class_under(rb_mAudioToolbox, "MusicTrackCollection", rb_cObject);
-    rb_define_method(rb_cMusicTrackCollection, "initialize", tracks_init, 1);
     rb_define_method(rb_cMusicTrackCollection, "size", tracks_size, 0);
-    rb_define_method(rb_cMusicTrackCollection, "[]", tracks_ind, 1);
     rb_define_method(rb_cMusicTrackCollection, "index", tracks_index, 1);
-    rb_define_method(rb_cMusicTrackCollection, "tempo", tracks_tempo, 0);
-    rb_define_method(rb_cMusicTrackCollection, "delete", tracks_delete, 1);
+    rb_define_private_method(rb_cMusicTrackCollection, "delete_internal", tracks_delete_internal, 1);
+    rb_define_private_method(rb_cMusicTrackCollection, "tempo_internal", tracks_tempo_internal, 0);
+    rb_define_private_method(rb_cMusicTrackCollection, "ind_internal", tracks_get_ind_track_internal, 1);
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);
