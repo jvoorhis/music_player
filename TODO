@@ -1,0 +1,83 @@
+MUST-HAVE FOR RELEASE
+=====
+- Documentation
+- Build automation for 1.8 and 1.9
+- MIDI file I/O
+- Track property support
+- Event iterator support
+- Better API for working with CoreMIDI destinations
+
+API PUNCH LIST
+Excludes deprecated API calls.
+=====
++ NewMusicPlayer
++ DisposeMusicPlayer
++ MusicPlayerSetSequence
++ MusicPlayerGetSequence
++ MusicPlayerSetTime
++ MusicPlayerGetTime
+- MusicPlayerGetHostTimeForBeats
+- MusicPlayerGetBeatsForHostTime
++ MusicPlayerStart
++ MusicPlayerStop
++ MusicPlayerIsPlaying
++ MusicPlayerSetPlayRateScalar
++ MusicPlayerGetPlayRateScalar
++ DisposeMusicSequence
++ MusicSequenceNewTrack
++ MusicSequenceDisposeTrack
++ MusicSequenceGetTrackCount
++ MusicSequenceGetIndTrack
++ MusicSequenceGetTrackIndex
++ MusicSequenceGetTempoTrack
+- MusicSequenceSetAUGraph
+- MusicSequenceGetAUGraph
++ MusicSequenceSetMIDIEndpoint
++ MusicSequenceSetSequenceType
++ MusicSequenceGetSequenceType
+- MusicSequenceFileLoad 
+- MusicSequenceSetSMPTEResolution 
+- MusicSequenceGetSMPTEResolution 
++ MusicSequenceFileCreate 
+- MusicSequenceReverse
+- MusicSequenceGetSecondsForBeats
+- MusicSequenceGetBeatsForSeconds
+- MusicSequenceSetUserCallback
+- MusicSequenceBeatsToBarBeatTime
+- MusicSequenceBarBeatTimeToBeats
+- MusicSequenceGetInfoDictionary
+- MusicTrackGetSequence
+- MusicTrackSetDestNode
+- MusicTrackSetDestMIDIEndpoint
+- MusicTrackGetDestNode
+- MusicTrackGetDestMIDIEndpoint
+- MusicTrackSetProperty
+- MusicTrackGetProperty
+- MusicTrackMoveEvents
+- NewMusicTrackFrom
+- MusicTrackClear
+- MusicTrackCut
+- MusicTrackCopyInsert
+- MusicTrackMerge
++ MusicTrackNewMIDINoteEvent
++ MusicTrackNewMIDIChannelEvent
+- MusicTrackNewMIDIRawDataEvent
+- MusicTrackNewExtendedNoteEvent
+- MusicTrackNewExtendedControlEvent
+- MusicTrackNewParameterEvent
++ MusicTrackNewExtendedTempoEvent
+- MusicTrackNewMetaEvent
+- MusicTrackNewUserEvent
+- MusicTrackNewAUPresetEvent
+- NewMusicEventIterator
+- DisposeMusicEventIterator
+- MusicEventIteratorSeek
+- MusicEventIteratorNextEvent
+- MusicEventIteratorPreviousEvent
+- MusicEventIteratorGetEventInfo
+- MusicEventIteratorSetEventInfo
+- MusicEventIteratorSetEventTime
+- MusicEventIteratorDeleteEvent
+- MusicEventIteratorHasPreviousEvent
+- MusicEventIteratorHasNextEvent
+- MusicEventIteratorHasCurrentEvent
