@@ -1,5 +1,9 @@
+/*
+ * Copyright (c) 2009 Jeremy Voorhis <jvoorhis@gmail.com>
+ */
+
 #include <ruby.h>
-#include "rubyutil.h"
+#include "util.h"
 #include <AudioToolbox/MusicPlayer.h>
 #include <CoreMIDI/MIDIServices.h>
 
@@ -318,6 +322,27 @@ sequence_save (VALUE self, VALUE rb_path)
     fail:
     CFRelease(url);
     rb_raise(rb_eRuntimeError, "MusicSequenceFileCreate() failed with OSStatus %i.", (int) err);
+}
+
+static VALUE
+sequence_load (VALUE self, VALUE rb_path)
+{
+    if (!T_STRING == TYPE(rb_path))
+        rb_raise(rb_eArgError, "Expected path to be given as a String.");
+    
+    CFURLRef url = PATH2CFURL(rb_path);
+    MusicSequence *seq;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicSequence, seq);
+    require_noerr( err = MusicSequenceFileLoad(*seq, url, kMusicSequenceFile_MIDIType, kMusicSequenceLoadSMF_ChannelsToTracks), fail);
+    CFRelease(url);
+    
+    return Qnil;
+    
+    fail:
+    CFRelease(url);
+    rb_raise(rb_eRuntimeError, "MusicSequenceFileLoad() failed with OSStatus %i.", (int) err);
 }
 
 /* Track defns */
@@ -715,6 +740,7 @@ Init_music_player ()
     /* AudioToolbox::MusicSequence */
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);
     rb_define_singleton_method(rb_cMusicSequence, "new", sequence_new, 0);
+    rb_define_method(rb_cMusicSequence, "load", sequence_load, 1);
     rb_define_method(rb_cMusicSequence, "midi_endpoint=", sequence_set_midi_endpoint, 1);
     rb_define_method(rb_cMusicSequence, "type", sequence_get_type, 0);
     rb_define_method(rb_cMusicSequence, "type=", sequence_set_type, 1);
