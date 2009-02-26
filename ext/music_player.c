@@ -307,9 +307,7 @@ sequence_save (VALUE self, VALUE rb_path)
     if (!T_STRING == TYPE(rb_path))
         rb_raise(rb_eArgError, "Expected path to be given as a String.");
     
-    VALUE rb_abs_path = rb_file_expand_path(rb_path, Qnil);
-    char *path = StringValueCStr(rb_abs_path);
-    CFURLRef url = CFURLCreateFromFileSystemRepresentation(NULL, (const UInt8 *) path, strlen(path), false);
+    CFURLRef url = PATH2CFURL(rb_path);
     MusicSequence *seq;
     OSStatus err;
     

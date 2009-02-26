@@ -2,7 +2,7 @@ MUST-HAVE FOR RELEASE
 =====
 - Documentation
 - Build automation for 1.8 and 1.9
-- MIDI file I/O
++ MIDI file I/O
 - Track property support
 - Event iterator support
 - Better API for working with CoreMIDI destinations
@@ -36,10 +36,10 @@ Excludes deprecated API calls.
 + MusicSequenceSetMIDIEndpoint
 + MusicSequenceSetSequenceType
 + MusicSequenceGetSequenceType
-- MusicSequenceFileLoad 
-- MusicSequenceSetSMPTEResolution 
-- MusicSequenceGetSMPTEResolution 
-+ MusicSequenceFileCreate 
++ MusicSequenceFileLoad
+- MusicSequenceSetSMPTEResolution
+- MusicSequenceGetSMPTEResolution
++ MusicSequenceFileCreate
 - MusicSequenceReverse
 - MusicSequenceGetSecondsForBeats
 - MusicSequenceGetBeatsForSeconds
