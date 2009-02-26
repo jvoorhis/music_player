@@ -151,8 +151,8 @@ player_get_time (VALUE self)
 static VALUE
 player_set_time (VALUE self, VALUE rb_ts)
 {
-    if (PRIM_NUM_P(rb_ts))
-        rb_raise(rb_eArgError, "Expected argument to be a Float.");
+    if (!PRIM_NUM_P(rb_ts))
+        rb_raise(rb_eArgError, "Expected argument to be a number.");
     
     MusicPlayer *player;
     MusicTimeStamp ts;
@@ -312,7 +312,7 @@ sequence_save (VALUE self, VALUE rb_path)
     OSStatus err;
     
     Data_Get_Struct(self, MusicSequence, seq);
-    require_noerr( err = MusicSequenceFileCreate(*seq, url, kMusicSequenceFile_MIDIType, kMusicSequenceFileFlags_EraseFile, 0), fail);
+    require_noerr( err = MusicSequenceFileCreate(*seq, url, kMusicSequenceFile_MIDIType, kMusicSequenceFileFlags_EraseFile, 0), fail );
     CFRelease(url);
     
     return Qnil;
@@ -333,7 +333,7 @@ sequence_load (VALUE self, VALUE rb_path)
     OSStatus err;
     
     Data_Get_Struct(self, MusicSequence, seq);
-    require_noerr( err = MusicSequenceFileLoad(*seq, url, kMusicSequenceFile_MIDIType, kMusicSequenceLoadSMF_ChannelsToTracks), fail);
+    require_noerr( err = MusicSequenceFileLoad(*seq, url, kMusicSequenceFile_MIDIType, kMusicSequenceLoadSMF_ChannelsToTracks), fail );
     CFRelease(url);
     
     return Qnil;

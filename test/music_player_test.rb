@@ -19,7 +19,15 @@ class MusicPlayerTest < Test::Unit::TestCase
     assert_nothing_raised { assert_nil @player.stop }
     assert !@player.playing?
   end
-
+  
+  def test_time
+    assert_nothing_raised do
+      assert_equal 0.0, @player.time
+      @player.time = 1.0
+      assert_equal 1.0, @player.time
+    end
+  end
+  
   def test_play_rate_scalar
     assert_nothing_raised do
       assert_equal 1.0, @player.play_rate_scalar
