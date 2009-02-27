@@ -584,15 +584,10 @@ midi_note_message_init (VALUE self, VALUE rb_opts)
 }
 
 static VALUE
-midi_note_message_new (VALUE class, VALUE rb_opts)
+midi_note_message_alloc (VALUE class)
 {
-    MIDINoteMessage *msg = ALLOC(MIDINoteMessage);
-    VALUE rb_msg, argv[1];
-    
-    rb_msg = Data_Wrap_Struct(class, 0, midi_note_message_free, msg);
-    argv[0] = rb_opts;
-    rb_obj_call_init(rb_msg, 1, argv);
-    return rb_msg;
+    MIDINoteMessage *msg;
+    return Data_Make_Struct(class, MIDINoteMessage, 0, midi_note_message_free, msg);
 }
 
 static VALUE
@@ -670,15 +665,10 @@ midi_channel_message_init (VALUE self, VALUE rb_opts)
 }
 
 static VALUE
-midi_channel_message_new (VALUE class, VALUE rb_opts)
+midi_channel_message_alloc (VALUE class)
 {
-    MIDIChannelMessage *msg = ALLOC(MIDIChannelMessage);
-    VALUE rb_msg, argv[1];
-    
-    rb_msg = Data_Wrap_Struct(class, 0, midi_channel_message_free, msg);
-    argv[0] = rb_opts;
-    rb_obj_call_init(rb_msg, 1, argv);
-    return rb_msg;
+    MIDIChannelMessage *msg;
+    return Data_Make_Struct(class, MIDIChannelMessage, 0, midi_channel_message_free, msg);
 }
 
 static VALUE
@@ -766,7 +756,7 @@ Init_music_player ()
     
     /* AudioToolbox::MIDINoteMessage */
     rb_cMIDINoteMessage = rb_define_class_under(rb_mAudioToolbox, "MIDINoteMessage", rb_cObject);
-    rb_define_singleton_method(rb_cMIDINoteMessage, "new", midi_note_message_new, 1);
+    rb_define_alloc_func(rb_cMIDINoteMessage, midi_note_message_alloc);
     rb_define_method(rb_cMIDINoteMessage, "initialize", midi_note_message_init, 1);
     rb_define_method(rb_cMIDINoteMessage, "channel", midi_note_message_channel, 0);
     rb_define_method(rb_cMIDINoteMessage, "note", midi_note_message_note, 0);
@@ -776,12 +766,12 @@ Init_music_player ()
     
     /* AudioToolbox::MIDIChannelMessage */
     rb_cMIDIChannelMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIChannelMessage", rb_cObject);
-    rb_define_singleton_method(rb_cMIDIChannelMessage, "new", midi_channel_message_new, 1);
+    rb_define_alloc_func(rb_cMIDIChannelMessage, midi_channel_message_alloc);
     rb_define_method(rb_cMIDIChannelMessage, "initialize", midi_channel_message_init, 1);
     rb_define_method(rb_cMIDIChannelMessage, "status", midi_channel_message_status, 0);
     rb_define_method(rb_cMIDIChannelMessage, "data1", midi_channel_message_data1, 0);
     rb_define_method(rb_cMIDIChannelMessage, "data2", midi_channel_message_data2, 0);
-
+    
     /* AudioToolbox::ExtendedTempoEvent */
     rb_cExtendedTempoEvent = rb_define_class_under(rb_mAudioToolbox, "ExtendedTempoEvent", rb_cObject);
 }
