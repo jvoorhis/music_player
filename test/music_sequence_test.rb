@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__), 'test_helper.rb')
+require 'pathname'
 require 'tempfile'
 
 class MusicSequenceTest < Test::Unit::TestCase
@@ -33,6 +34,8 @@ class MusicSequenceTest < Test::Unit::TestCase
   def test_save_with_pathname
     tmp = Tempfile.new('music_sequence_test.mid')
     assert_nothing_raised { @sequence.save(tmp.path) }
+    # Or more literally, a Pathname. Should support anything with #to_str.
+    assert_nothing_raised { @sequence.save(Pathname(tmp.path)) }
     assert File.exists?(tmp.path)
   end
   
@@ -41,6 +44,9 @@ class MusicSequenceTest < Test::Unit::TestCase
     smf = File.join(dir, 'example.mid')
     sz = @sequence.tracks.size
     assert_nothing_raised { @sequence.load(smf) }
-    assert_equal sz+1, @sequence.tracks.size
+    # Basically, show that new tracks are appended to the end of the collection.
+    assert_equal 2, @sequence.tracks.size
+    assert_equal @track, @sequence.tracks[0]
+    assert_not_equal @track, @sequence.tracks[1]
   end
 end

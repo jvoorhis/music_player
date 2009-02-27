@@ -374,13 +374,13 @@ static VALUE
 track_new (VALUE class, VALUE rb_seq)
 {
     MusicSequence *seq;
-    MusicTrack *track = ALLOC(MusicTrack);
+    MusicTrack *track;
     OSStatus err;
     VALUE rb_track, argv[1];
     
     Data_Get_Struct(rb_seq, MusicSequence, seq);
+    rb_track = Data_Make_Struct(rb_cMusicTrack, MusicTrack, 0, track_free, track);
     require_noerr( err = MusicSequenceNewTrack(*seq, track), fail );
-    rb_track = Data_Wrap_Struct(class, 0, track_free, track);
     argv[0] = rb_seq;
     rb_obj_call_init(rb_track, 1, argv);
     return rb_track;
