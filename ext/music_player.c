@@ -554,9 +554,7 @@ midi_note_message_free (MIDINoteMessage *msg)
 static VALUE
 midi_note_message_init (VALUE self, VALUE rb_opts)
 {
-    if (T_HASH != TYPE(rb_opts))
-        rb_raise(rb_eArgError, "Expected argument to be a Hash.");
-
+    Check_Type(rb_opts, T_HASH);
     MIDINoteMessage *msg;
     VALUE rb_chn, rb_note, rb_vel, rb_rel_vel, rb_dur;
 
@@ -641,9 +639,7 @@ midi_channel_message_free (MIDIChannelMessage *msg)
 static VALUE
 midi_channel_message_init (VALUE self, VALUE rb_opts)
 {
-    if (T_HASH != TYPE(rb_opts))
-        rb_raise(rb_eArgError, "Expected argument to be a Hash.");
-    
+    Check_Type(rb_opts, T_HASH);
     MIDIChannelMessage *msg;
     VALUE rb_status, rb_data1, rb_data2;
     
