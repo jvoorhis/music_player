@@ -220,16 +220,20 @@ sequence_free (MusicSequence *seq)
 }
 
 static VALUE
-sequence_new (VALUE class)
+sequence_alloc (VALUE class)
 {
-    MusicSequence *seq = ALLOC(MusicSequence);
+  MusicSequence *seq;
+  return Data_Make_Struct(rb_cMusicSequence, MusicSequence, 0, sequence_free, seq);
+}
+
+static VALUE
+sequence_init (VALUE self)
+{
+    MusicSequence *seq;
     OSStatus err;
-    VALUE rb_seq;
-    
+    Data_Get_Struct(self, MusicSequence, seq);
     require_noerr( err = NewMusicSequence(seq), fail );
-    rb_seq = Data_Wrap_Struct(class, 0, sequence_free, seq);
-    rb_obj_call_init(rb_seq, 0, 0);
-    return rb_seq;
+    return self;
     
     fail:
     rb_raise(rb_eRuntimeError, "NewMusicSequence() failed with OSStatus %i.", (int) err);
@@ -736,7 +740,8 @@ Init_music_player ()
     
     /* AudioToolbox::MusicSequence */
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);
-    rb_define_singleton_method(rb_cMusicSequence, "new", sequence_new, 0);
+    rb_define_alloc_func(rb_cMusicSequence, sequence_alloc);
+    rb_define_method(rb_cMusicSequence, "initialize", sequence_init, 0);
     rb_define_method(rb_cMusicSequence, "load", sequence_load, 1);
     rb_define_method(rb_cMusicSequence, "midi_endpoint=", sequence_set_midi_endpoint, 1);
     rb_define_method(rb_cMusicSequence, "type", sequence_get_type, 0);
