@@ -51,16 +51,20 @@ player_free (MusicPlayer *player)
 }
 
 static VALUE
-player_new (VALUE class)
+player_alloc (VALUE class)
 {
+    MusicPlayer *player;
+    return Data_Make_Struct(rb_cMusicPlayer, MusicPlayer, 0, player_free, player);
+}
+
+static VALUE
+player_init (VALUE self)
+{
+    MusicPlayer *player;
     OSStatus err;
-    MusicPlayer *player = ALLOC(MusicPlayer);
-    VALUE rb_player;
-    
+    Data_Get_Struct(self, MusicPlayer, player);
     require_noerr( err = NewMusicPlayer(player), fail );
-    rb_player = Data_Wrap_Struct(class, 0, player_free, player);
-    rb_obj_call_init(rb_player, 0, 0);
-    return rb_player;
+    return self;
     
     fail:
     rb_raise(rb_eRuntimeError, "NewMusicPlayer() failed with OSStatus %i.", (int) err);
@@ -304,10 +308,7 @@ sequence_set_type (VALUE self, VALUE rb_type)
 static VALUE
 sequence_save (VALUE self, VALUE rb_path)
 {
-    if (!T_STRING == TYPE(rb_path))
-        rb_raise(rb_eArgError, "Expected path to be given as a String.");
-    
-    CFURLRef url = PATH2CFURL(rb_path);
+    CFURLRef url = PATH2CFURL(StringValue(rb_path));
     MusicSequence *seq;
     OSStatus err;
     
@@ -325,10 +326,7 @@ sequence_save (VALUE self, VALUE rb_path)
 static VALUE
 sequence_load (VALUE self, VALUE rb_path)
 {
-    if (!T_STRING == TYPE(rb_path))
-        rb_raise(rb_eArgError, "Expected path to be given as a String.");
-    
-    CFURLRef url = PATH2CFURL(rb_path);
+    CFURLRef url = PATH2CFURL(StringValue(rb_path));
     MusicSequence *seq;
     OSStatus err;
     
@@ -724,7 +722,8 @@ Init_music_player ()
     
     /* AudioToolbox::MusicPlayer */
     rb_cMusicPlayer = rb_define_class_under(rb_mAudioToolbox, "MusicPlayer", rb_cObject);
-    rb_define_singleton_method(rb_cMusicPlayer, "new", player_new, 0);
+    rb_define_alloc_func(rb_cMusicPlayer, player_alloc);
+    rb_define_method(rb_cMusicPlayer, "initialize", player_init, 0);
     rb_define_method(rb_cMusicPlayer, "playing?", player_is_playing, 0);
     rb_define_method(rb_cMusicPlayer, "sequence", player_get_sequence, 0);
     rb_define_method(rb_cMusicPlayer, "sequence=", player_set_sequence, 1);

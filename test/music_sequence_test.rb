@@ -24,15 +24,23 @@ class MusicSequenceTest < Test::Unit::TestCase
     assert_equal :secs, seq.type
   end
   
+  def test_tracks
+    assert_kind_of MusicTrackCollection, @sequence.tracks
+    assert_equal @sequence.tracks, @sequence.tracks,
+      "Expected only one instance of the track collection."
+  end
+  
   def test_save_with_pathname
     tmp = Tempfile.new('music_sequence_test.mid')
     assert_nothing_raised { @sequence.save(tmp.path) }
     assert File.exists?(tmp.path)
   end
   
-  def test_tracks
-    assert_kind_of MusicTrackCollection, @sequence.tracks
-    assert_equal @sequence.tracks, @sequence.tracks,
-      "Expected only one instance of the track collection."
+  def test_load
+    dir = File.dirname(__FILE__)
+    smf = File.join(dir, 'example.mid')
+    sz = @sequence.tracks.size
+    assert_nothing_raised { @sequence.load(smf) }
+    assert_equal sz+1, @sequence.tracks.size
   end
 end

@@ -1,13 +1,15 @@
 #include <ruby.h>
 #include <CoreFoundation/CoreFoundation.h>
 
-// Tests whether a VALUE is a primitive number type.
+/* Test whether a VALUE is a primitive number type. */
 #define PRIM_NUM_P(num) (T_FIXNUM == TYPE(num) || \
                           T_FLOAT == TYPE(num) || \
                          T_BIGNUM == TYPE(num))
 
+/* Convert a C string to a Ruby Symbol. */
 #define CSTR2SYM(str) (ID2SYM(rb_intern(str)))
 
+/* Convert a Ruby String to a CFURLRef. */
 #define PATH2CFURL(path) (rb_path_to_cfurl(path))
 
 static CFURLRef
