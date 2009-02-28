@@ -7,10 +7,18 @@ module AudioToolbox
     def tracks
       @tracks ||= MusicTrackCollection.new(self)
     end
+    
+    def load(path)
+      tracks.lock.synchronize do
+        load_internal(path)
+      end
+    end
   end
   
   class MusicTrackCollection
     include Enumerable
+    
+    attr :lock
     
     def initialize(sequence)
       @sequence = sequence

@@ -728,7 +728,7 @@ Init_music_player ()
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);
     rb_define_alloc_func(rb_cMusicSequence, sequence_alloc);
     rb_define_method(rb_cMusicSequence, "initialize", sequence_init, 0);
-    rb_define_method(rb_cMusicSequence, "load", sequence_load, 1);
+    rb_define_private_method(rb_cMusicSequence, "load_internal", sequence_load, 1);
     rb_define_method(rb_cMusicSequence, "midi_endpoint=", sequence_set_midi_endpoint, 1);
     rb_define_method(rb_cMusicSequence, "type", sequence_get_type, 0);
     rb_define_method(rb_cMusicSequence, "type=", sequence_set_type, 1);
