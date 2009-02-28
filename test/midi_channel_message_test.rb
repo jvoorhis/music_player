@@ -7,14 +7,24 @@ class MIDIChannelMessageTest < Test::Unit::TestCase
     assert_nothing_raised { MIDIChannelMessage.new :status => 42 }
   end
   
+  def test_eq
+    msg1 = make_msg
+    msg2 = make_msg
+    # Demonstrates that separate Ruby MIDIChannelMessage objects may be
+    # compared by value.
+    assert msg1.object_id != msg2.object_id
+    assert msg1 == msg2
+  end
+  
   def test_accessors
-    msg = MIDIChannelMessage.new(
-            :status => 42,
-            :data1  => 43,
-            :data2  => 44)
+    msg = make_msg
     assert_equal 42, msg.status
     assert_equal 43, msg.data1
     assert_equal 44, msg.data2
+  end
+  
+  def make_msg
+    MIDIChannelMessage.new(:status => 42, :data1  => 43, :data2  => 44)
   end
 end
 

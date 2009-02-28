@@ -31,8 +31,8 @@ Excludes deprecated API calls.
 + MusicSequenceGetIndTrack
 + MusicSequenceGetTrackIndex
 + MusicSequenceGetTempoTrack
-- MusicSequenceSetAUGraph
-- MusicSequenceGetAUGraph
+? MusicSequenceSetAUGraph
+? MusicSequenceGetAUGraph
 + MusicSequenceSetMIDIEndpoint
 + MusicSequenceSetSequenceType
 + MusicSequenceGetSequenceType
@@ -43,14 +43,14 @@ Excludes deprecated API calls.
 - MusicSequenceReverse
 - MusicSequenceGetSecondsForBeats
 - MusicSequenceGetBeatsForSeconds
-- MusicSequenceSetUserCallback
+? MusicSequenceSetUserCallback
 - MusicSequenceBeatsToBarBeatTime
 - MusicSequenceBarBeatTimeToBeats
-- MusicSequenceGetInfoDictionary
+? MusicSequenceGetInfoDictionary
 - MusicTrackGetSequence
-- MusicTrackSetDestNode
+? MusicTrackSetDestNode
 - MusicTrackSetDestMIDIEndpoint
-- MusicTrackGetDestNode
+? MusicTrackGetDestNode
 - MusicTrackGetDestMIDIEndpoint
 - MusicTrackSetProperty
 - MusicTrackGetProperty
@@ -63,22 +63,28 @@ Excludes deprecated API calls.
 + MusicTrackNewMIDINoteEvent
 + MusicTrackNewMIDIChannelEvent
 - MusicTrackNewMIDIRawDataEvent
-- MusicTrackNewExtendedNoteEvent
-- MusicTrackNewExtendedControlEvent
-- MusicTrackNewParameterEvent
+? MusicTrackNewExtendedNoteEvent
+? MusicTrackNewExtendedControlEvent
+? MusicTrackNewParameterEvent
 + MusicTrackNewExtendedTempoEvent
 - MusicTrackNewMetaEvent
-- MusicTrackNewUserEvent
-- MusicTrackNewAUPresetEvent
-- NewMusicEventIterator
-- DisposeMusicEventIterator
-- MusicEventIteratorSeek
-- MusicEventIteratorNextEvent
-- MusicEventIteratorPreviousEvent
+? MusicTrackNewUserEvent
+? MusicTrackNewAUPresetEvent
++ NewMusicEventIterator
++ DisposeMusicEventIterator
++ MusicEventIteratorSeek
++ MusicEventIteratorNextEvent
++ MusicEventIteratorPreviousEvent
 - MusicEventIteratorGetEventInfo
 - MusicEventIteratorSetEventInfo
 - MusicEventIteratorSetEventTime
 - MusicEventIteratorDeleteEvent
-- MusicEventIteratorHasPreviousEvent
-- MusicEventIteratorHasNextEvent
-- MusicEventIteratorHasCurrentEvent
++ MusicEventIteratorHasPreviousEvent
++ MusicEventIteratorHasNextEvent
++ MusicEventIteratorHasCurrentEvent
+
+LEGEND
+=====
+-       Not Implemented
++       Implemented
+?       May implement

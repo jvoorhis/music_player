@@ -10,7 +10,12 @@
 /* Ruby type decls */
 
 static VALUE rb_mCoreMIDI = Qnil;
+
 static VALUE rb_mAudioToolbox = Qnil;
+
+static VALUE rb_eEndOfTrack = Qnil;
+static VALUE rb_eStartOfTrack = Qnil;
+
 static VALUE rb_cMusicPlayer = Qnil;
 static VALUE rb_cMusicSequence = Qnil;
 static VALUE rb_cMusicTrack = Qnil;
@@ -18,6 +23,31 @@ static VALUE rb_cMusicTrackCollection = Qnil;
 static VALUE rb_cMIDINoteMessage = Qnil;
 static VALUE rb_cMIDIChannelMessage = Qnil;
 static VALUE rb_cExtendedTempoEvent = Qnil;
+static VALUE rb_cMusicEventIterator = Qnil;
+
+/* Utils */
+
+static void
+raise_osstatus (OSStatus err, const char *what)
+{
+    switch (err) {
+    case kAudioToolboxErr_TrackIndexError:
+        rb_raise(rb_eRangeError, "Index is out of range.");
+        break;
+    case kAudioToolboxErr_TrackNotFound:
+        rb_raise(rb_eRangeError, "Track not found.");
+        break;
+    case kAudioToolboxErr_EndOfTrack:
+        rb_raise(rb_eEndOfTrack, "Reached end of track.");
+        break;
+    case kAudioToolboxErr_StartOfTrack:
+        rb_raise(rb_eStartOfTrack, "Reached start of track.");
+        break;
+    default:
+        rb_raise(rb_eRuntimeError, "%s failed with OSStatus %i.", what, (int) err);
+        break;
+    }
+}
 
 /* CoreMIDI defns */
 
@@ -67,7 +97,7 @@ player_init (VALUE self)
     return self;
     
     fail:
-    rb_raise(rb_eRuntimeError, "NewMusicPlayer() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "NewMusicPlayer()");
 }
 
 static VALUE
@@ -82,7 +112,7 @@ player_is_playing (VALUE self)
     return playing ? Qtrue : Qfalse;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerIsPlaying() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerIsPlaying()");
 }
 
 static VALUE
@@ -106,7 +136,7 @@ player_set_sequence (VALUE self, VALUE rb_seq)
     return rb_seq;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerSetSequence() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerSetSequence()");
 }
 
 static VALUE
@@ -120,7 +150,7 @@ player_start (VALUE self)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerStart() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerStart()");
 }
 
 static VALUE
@@ -134,7 +164,7 @@ player_stop (VALUE self)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerStop() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerStop()");
 }
 
 static VALUE
@@ -149,7 +179,7 @@ player_get_time (VALUE self)
     return rb_float_new((Float64) ts);
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerGetTime() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerGetTime()");
 }
 
 static VALUE
@@ -168,7 +198,7 @@ player_set_time (VALUE self, VALUE rb_ts)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerSetTime() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerSetTime()");
 }
 
 static VALUE
@@ -183,7 +213,7 @@ player_get_play_rate_scalar (VALUE self)
     return rb_float_new(scalar);
 
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerGetPlayRateScalar() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerGetPlayRateScalar()");
 }
 
 static VALUE
@@ -202,7 +232,7 @@ player_set_play_rate_scalar (VALUE self, VALUE rb_scalar)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicPlayerSetPlayRateScalar() failed with %i.", (int) err);
+    raise_osstatus(err, "MusicPlayerSetPlayRateScalar()");
 }
 
 /* Sequence defns */
@@ -239,7 +269,7 @@ sequence_init (VALUE self)
     return self;
     
     fail:
-    rb_raise(rb_eRuntimeError, "NewMusicSequence() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "NewMusicSequence()");
 }
 
 static VALUE
@@ -256,7 +286,7 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceSetMIDIEndpoint() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceSetMIDIEndpoint()");
 }
 
 static VALUE
@@ -286,7 +316,7 @@ sequence_get_type (VALUE self)
     return rb_type;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceGetSequenceType() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceGetSequenceType()");
 }
 
 static VALUE
@@ -309,7 +339,7 @@ sequence_set_type (VALUE self, VALUE rb_type)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceGetSequenceType() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceSetSequenceType()");
 }
 
 static VALUE
@@ -327,7 +357,7 @@ sequence_save (VALUE self, VALUE rb_path)
     
     fail:
     CFRelease(url);
-    rb_raise(rb_eRuntimeError, "MusicSequenceFileCreate() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceFileCreate()");
 }
 
 static VALUE
@@ -345,7 +375,7 @@ sequence_load (VALUE self, VALUE rb_path)
     
     fail:
     CFRelease(url);
-    rb_raise(rb_eRuntimeError, "MusicSequenceFileLoad() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceFileLoad()");
 }
 
 /* Track defns */
@@ -389,7 +419,7 @@ track_new (VALUE class, VALUE rb_seq)
     return rb_track;
 
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceNewTrack() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceNewTrack()");
 }
 
 static VALUE
@@ -406,7 +436,7 @@ track_add_midi_note_message (VALUE self, VALUE rb_at, VALUE rb_msg)
     return Qnil;
 
     fail:
-    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDINoteEvent() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicTrackNewMIDINoteEvent()");
 }
 
 static VALUE
@@ -423,7 +453,7 @@ track_add_midi_channel_message (VALUE self, VALUE rb_at, VALUE rb_msg)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicTrackNewMIDIChannelEvent() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicTrackNewMIDIChannelEvent()");
 }
 
 static VALUE
@@ -450,7 +480,7 @@ track_add_extended_tempo_event (VALUE self, VALUE rb_at, VALUE rb_bpm)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicTrackNewExtendedTempoEvent() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicTrackNewExtendedTempoEvent()");
 }
 
 /* MusicSequence#Tracks proxy defns */
@@ -475,7 +505,7 @@ tracks_size (VALUE self)
     return UINT2NUM(track_count);
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceGetTrackCount() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceGetTrackCount()");
 }
 
 static VALUE
@@ -491,10 +521,7 @@ tracks_get_ind_track_internal (VALUE self, VALUE rb_key)
     return track_internal_new(rb_seq, track);
     
     fail:
-    if (err == kAudioToolboxErr_TrackIndexError)
-        rb_raise(rb_eRangeError, "Index is out-of-bounds.");
-    else
-        rb_raise(rb_eRuntimeError, "MusicSequenceGetIndTrack() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceGetIndTrack()");
 }
 
 static VALUE
@@ -513,7 +540,7 @@ tracks_index (VALUE self, VALUE rb_track)
     return UINT2NUM(i);
     
     fail:
-    rb_raise(rb_eRangeError, "MusicSequenceGetTrackIndex() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceGetTrackIndex()");
 }
 
 static VALUE
@@ -528,7 +555,7 @@ tracks_tempo_internal (VALUE self)
     return track_internal_new(rb_seq, track);
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceGetTempoTrack() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceGetTempoTrack()");
 }
 
 static VALUE
@@ -543,7 +570,7 @@ tracks_delete_internal (VALUE self, VALUE rb_track)
     return Qnil;
     
     fail:
-    rb_raise(rb_eRuntimeError, "MusicSequenceDisposeTrack() failed with OSStatus %i.", (int) err);
+    raise_osstatus(err, "MusicSequenceDisposeTrack()");
 }
 
 /* MIDINoteMessage */
@@ -552,6 +579,13 @@ static void
 midi_note_message_free (MIDINoteMessage *msg)
 {
     free(msg);
+}
+
+static VALUE
+midi_note_message_alloc (VALUE class)
+{
+    MIDINoteMessage *msg;
+    return Data_Make_Struct(class, MIDINoteMessage, 0, midi_note_message_free, msg);
 }
 
 static VALUE
@@ -582,13 +616,6 @@ midi_note_message_init (VALUE self, VALUE rb_opts)
     msg->duration = (MusicTimeStamp) (PRIM_NUM_P(rb_dur)) ? NUM2DBL(rb_dur) : 1.0;
     
     return self;
-}
-
-static VALUE
-midi_note_message_alloc (VALUE class)
-{
-    MIDINoteMessage *msg;
-    return Data_Make_Struct(class, MIDINoteMessage, 0, midi_note_message_free, msg);
 }
 
 static VALUE
@@ -640,6 +667,13 @@ midi_channel_message_free (MIDIChannelMessage *msg)
 }
 
 static VALUE
+midi_channel_message_alloc (VALUE class)
+{
+    MIDIChannelMessage *msg;
+    return Data_Make_Struct(class, MIDIChannelMessage, 0, midi_channel_message_free, msg);
+}
+
+static VALUE
 midi_channel_message_init (VALUE self, VALUE rb_opts)
 {
     Check_Type(rb_opts, T_HASH);
@@ -661,13 +695,6 @@ midi_channel_message_init (VALUE self, VALUE rb_opts)
     if (!NIL_P(rb_data2)) msg->data2 = (UInt8) FIX2INT(rb_data2);
     
     return self;
-}
-
-static VALUE
-midi_channel_message_alloc (VALUE class)
-{
-    MIDIChannelMessage *msg;
-    return Data_Make_Struct(class, MIDIChannelMessage, 0, midi_channel_message_free, msg);
 }
 
 static VALUE
@@ -694,6 +721,143 @@ midi_channel_message_data2 (VALUE self)
     return UINT2NUM(msg->data2);
 }
 
+/* MusicEventIterator defns */
+static void
+iter_free (MusicEventIterator *iter)
+{
+    OSStatus err;
+    require_noerr( err = DisposeMusicEventIterator(*iter), fail );
+    return;
+    
+    fail:
+    rb_warning("DisposeMusicEventIterator() failed with OSStatus %i.", (int) err);
+}
+
+static VALUE
+iter_alloc (VALUE class)
+{
+    MusicEventIterator *iter;
+    return Data_Make_Struct(rb_cMusicEventIterator, MusicEventIterator, 0, iter_free, iter);
+}
+
+static VALUE
+iter_init (VALUE self, VALUE rb_track)
+{
+    MusicTrack *track;
+    MusicEventIterator *iter;
+    OSStatus err;
+    Data_Get_Struct(rb_track, MusicTrack, track);
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = NewMusicEventIterator(*track, iter), fail );
+    return self;
+    
+    fail:
+    raise_osstatus(err, "NewMusicEventIterator()");
+}
+
+static VALUE
+iter_seek (VALUE self, VALUE rb_time)
+{
+    MusicEventIterator *iter;
+    MusicTimeStamp ts;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    if (PRIM_NUM_P(rb_time))
+        ts = NUM2DBL(rb_time);
+    else
+        rb_raise(rb_eArgError, "Expected first arg to be a number.");
+    require_noerr( err = MusicEventIteratorSeek(*iter, ts), fail );
+    return Qnil;
+
+    fail:
+    raise_osstatus(err, "MusicEventIteratorSeek()");
+}
+
+static VALUE
+iter_next (VALUE self)
+{
+    MusicEventIterator *iter;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorNextEvent(*iter), fail );
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorNextEvent()");
+}
+
+static VALUE
+iter_prev (VALUE self)
+{
+    MusicEventIterator *iter;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorPreviousEvent(*iter), fail );
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorPreviousEvent()");
+}
+
+static VALUE
+iter_has_current (VALUE self)
+{
+    MusicEventIterator *iter;
+    Boolean has_cur;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorHasCurrentEvent(*iter, &has_cur), fail );
+    if (has_cur) return Qtrue;
+    else return Qfalse;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorHasCurrentEvent()");
+}
+
+static VALUE
+iter_has_prev (VALUE self)
+{
+    MusicEventIterator *iter;
+    Boolean has_prev;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorHasPreviousEvent(*iter, &has_prev), fail );
+    if (has_prev) return Qtrue;
+    else return Qfalse;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorHasPreviousEvent()");
+}
+
+static VALUE
+iter_has_next (VALUE self)
+{
+    MusicEventIterator *iter;
+    Boolean has_next;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorHasNextEvent(*iter, &has_next), fail );
+    if (has_next) return Qtrue;
+    else return Qfalse;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorHasNextEvent()");
+}
+
+static VALUE
+iter_time (VALUE self)
+{
+    MusicEventIterator *iter;
+    MusicTimeStamp ts;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorGetEventInfo(*iter, &ts, NULL, NULL, NULL), fail );
+    return rb_float_new(ts);
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorGetEventInfo()");
+}
+
 /* Initialize extension */
 
 void
@@ -712,6 +876,12 @@ Init_music_player ()
      * AudioToolbox
      */
     rb_mAudioToolbox = rb_define_module("AudioToolbox");
+    
+    /*
+     * AudioToolbox exceptions
+     */
+    rb_eEndOfTrack = rb_define_class_under(rb_mAudioToolbox, "EndOfTrack", rb_eStandardError);
+    rb_eStartOfTrack = rb_define_class_under(rb_mAudioToolbox, "StartOfTrack", rb_eStandardError);
     
     /* AudioToolbox::MusicPlayer */
     rb_cMusicPlayer = rb_define_class_under(rb_mAudioToolbox, "MusicPlayer", rb_cObject);
@@ -773,4 +943,16 @@ Init_music_player ()
     
     /* AudioToolbox::ExtendedTempoEvent */
     rb_cExtendedTempoEvent = rb_define_class_under(rb_mAudioToolbox, "ExtendedTempoEvent", rb_cObject);
+    
+    /* AudioToolbox::MusicEventIterator */
+    rb_cMusicEventIterator = rb_define_class_under(rb_mAudioToolbox, "MusicEventIterator", rb_cObject);
+    rb_define_alloc_func(rb_cMusicEventIterator, iter_alloc);
+    rb_define_method(rb_cMusicEventIterator, "initialize", iter_init, 1);
+    rb_define_method(rb_cMusicEventIterator, "seek", iter_seek, 1);
+    rb_define_method(rb_cMusicEventIterator, "next", iter_next, 0);
+    rb_define_method(rb_cMusicEventIterator, "prev", iter_prev, 0);
+    rb_define_method(rb_cMusicEventIterator, "current?", iter_has_current, 0);
+    rb_define_method(rb_cMusicEventIterator, "next?", iter_has_next, 0);
+    rb_define_method(rb_cMusicEventIterator, "prev?", iter_has_prev, 0);
+    rb_define_method(rb_cMusicEventIterator, "time", iter_time, 0);
 }

@@ -16,7 +16,7 @@ module AudioToolbox
   class MusicTrackCollection
     include Enumerable
     
-    attr :lock
+    attr :lock # :nodoc:
     
     def initialize(sequence)
       @sequence = sequence
@@ -64,15 +64,35 @@ module AudioToolbox
     def add(time, message)
       message.add(time, self)
     end
+
+    def iterator
+      MusicEventIterator.new(self)
+    end
   end
   
   class MIDINoteMessage
+    def ==(msg)
+      self.class       == msg.class &&
+      channel          == msg.channel &&
+      note             == msg.note &&
+      velocity         == msg.velocity &&
+      release_velocity == msg.release_velocity &&
+      duration         == msg.duration
+    end
+    
     def add(time, track)
       track.add_midi_note_message(time, self)
     end
   end
   
   class MIDIChannelMessage
+    def ==(msg)
+      self.class == msg.class &&
+      status     == msg.status &&
+      data1      == msg.data1 &&
+      data2      == msg.data2
+    end
+    
     def channel
       status ^ mask
     end

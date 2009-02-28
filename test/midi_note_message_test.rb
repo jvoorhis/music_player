@@ -16,22 +16,35 @@ class MIDINoteMessageTest < Test::Unit::TestCase
   end
   
   def test_defaults
-    msg = MIDINoteMessage.new :note => 60
+    msg = MIDINoteMessage.new :note => 60 # No default for :note.
     assert_equal 1, msg.channel
     assert_equal 64, msg.velocity
     assert_equal 0, msg.release_velocity
     assert_equal 1.0, msg.duration
   end
-
+  
   def test_accessors
-    msg = MIDINoteMessage.new(
-            :note             => 50,
-            :velocity         => 40,
-            :release_velocity => 30,
-            :duration         => 2.0)
+    msg = make_msg
     assert_equal 50, msg.note
     assert_equal 40, msg.velocity
     assert_equal 30, msg.release_velocity
     assert_equal 2.0, msg.duration
+  end
+  
+  def test_eq
+    msg1 = make_msg
+    msg2 = make_msg
+    # Demonstrates that separate Ruby MIDIChannelMessage objects may be
+    # compared by value.
+    assert msg1.object_id != msg2.object_id
+    assert msg1 == msg2
+  end
+  
+  def make_msg
+    MIDINoteMessage.new(
+      :note             => 50,
+      :velocity         => 40,
+      :release_velocity => 30,
+      :duration         => 2.0)
   end
 end
