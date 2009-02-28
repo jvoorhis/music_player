@@ -233,6 +233,9 @@ sequence_init (VALUE self)
     OSStatus err;
     Data_Get_Struct(self, MusicSequence, seq);
     require_noerr( err = NewMusicSequence(seq), fail );
+    rb_iv_set(self, "@tracks",
+              rb_funcall(rb_cMusicTrackCollection, rb_intern("new"), 1, self));
+    
     return self;
     
     fail:

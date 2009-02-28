@@ -4,12 +4,10 @@ require 'music_player.bundle'
 
 module AudioToolbox
   class MusicSequence
-    def tracks
-      @tracks ||= MusicTrackCollection.new(self)
-    end
+    attr :tracks
     
     def load(path)
-      tracks.lock.synchronize do
+      @tracks.lock.synchronize do
         load_internal(path)
       end
     end
