@@ -187,5 +187,10 @@ module AudioToolbox
     def initialize(opts)
       @bpm = opts[:bpm]
     end
+
+    def ==(other)
+      self.class == other.class &&
+      bpm        == other.bpm
+    end
   end
 end

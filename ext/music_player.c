@@ -22,8 +22,30 @@ static VALUE rb_cMusicTrack = Qnil;
 static VALUE rb_cMusicTrackCollection = Qnil;
 static VALUE rb_cMIDINoteMessage = Qnil;
 static VALUE rb_cMIDIChannelMessage = Qnil;
+static VALUE rb_cMIDIKeyPressureMessage = Qnil;
+static VALUE rb_cMIDIControlChangeMessage = Qnil;
+static VALUE rb_cMIDIProgramChangeMessage = Qnil;
+static VALUE rb_cMIDIChannelPressureMessage = Qnil;
+static VALUE rb_cMIDIPitchBendMessage = Qnil;
 static VALUE rb_cExtendedTempoEvent = Qnil;
 static VALUE rb_cMusicEventIterator = Qnil;
+
+/* Ruby symbols */
+static VALUE rb_sBeat = Qnil;
+static VALUE rb_sChannel = Qnil;
+static VALUE rb_sData1 = Qnil;
+static VALUE rb_sData2 = Qnil;
+static VALUE rb_sDuration = Qnil;
+static VALUE rb_sNote = Qnil;
+static VALUE rb_sNumber = Qnil;
+static VALUE rb_sPressure = Qnil;
+static VALUE rb_sProgram = Qnil;
+static VALUE rb_sReleaseVelocity = Qnil;
+static VALUE rb_sSamp = Qnil;
+static VALUE rb_sSecs = Qnil;
+static VALUE rb_sStatus = Qnil;
+static VALUE rb_sValue = Qnil;
+static VALUE rb_sVelocity = Qnil;
 
 /* Utils */
 
@@ -299,21 +321,16 @@ sequence_get_type (VALUE self)
     Data_Get_Struct(self, MusicSequence, seq);
     require_noerr( err = MusicSequenceGetSequenceType(*seq, &type), fail );
     
-    VALUE rb_type = Qnil;
     switch (type) {
     case kMusicSequenceType_Beats:
-        rb_type = CSTR2SYM("beat");
-        break;
+        return rb_sBeat;
     case kMusicSequenceType_Seconds:
-        rb_type = CSTR2SYM("secs");
-        break;
+        return rb_sSecs;
     case kMusicSequenceType_Samples:
-        rb_type = CSTR2SYM("samp");
-        break;
+        return rb_sSamp;
     default:
         rb_raise(rb_eRuntimeError, "Unrecognized sequence type.");
     }
-    return rb_type;
     
     fail:
     raise_osstatus(err, "MusicSequenceGetSequenceType()");
@@ -324,11 +341,11 @@ sequence_set_type (VALUE self, VALUE rb_type)
 {
     MusicSequence *seq;
     MusicSequenceType type;
-    if (rb_type == CSTR2SYM("beat"))
+    if (rb_type == rb_sBeat)
         type = kMusicSequenceType_Beats;
-    else if (rb_type == CSTR2SYM("secs"))
+    else if (rb_type == rb_sSecs)
         type = kMusicSequenceType_Seconds;
-    else if (rb_type == CSTR2SYM("samp"))
+    else if (rb_type == rb_sSamp)
         type = kMusicSequenceType_Samples;
     else
         rb_raise(rb_eArgError, "Expected :type to be one of :beat, :secs, :samp.");
@@ -597,22 +614,22 @@ midi_note_message_init (VALUE self, VALUE rb_opts)
 
     Data_Get_Struct(self, MIDINoteMessage, msg);
 
-    rb_chn = rb_hash_aref(rb_opts, CSTR2SYM("channel"));
+    rb_chn = rb_hash_aref(rb_opts, rb_sChannel);
     msg->channel = FIXNUM_P(rb_chn) ? FIX2UINT(rb_chn) : 1;
     
-    rb_note = rb_hash_aref(rb_opts, CSTR2SYM("note"));
+    rb_note = rb_hash_aref(rb_opts, rb_sNote);
     if (FIXNUM_P(rb_note))
         msg->note = FIX2UINT(rb_note);
     else
         rb_raise(rb_eArgError, ":note is required.");
     
-    rb_vel = rb_hash_aref(rb_opts, CSTR2SYM("velocity"));
+    rb_vel = rb_hash_aref(rb_opts, rb_sVelocity);
     msg->velocity = FIXNUM_P(rb_vel) ? FIX2UINT(rb_vel) : 64;
     
-    rb_rel_vel = rb_hash_aref(rb_opts, CSTR2SYM("release_velocity"));
+    rb_rel_vel = rb_hash_aref(rb_opts, rb_sReleaseVelocity);
     msg->releaseVelocity = FIXNUM_P(rb_rel_vel) ? FIX2UINT(rb_rel_vel) : 0;
     
-    rb_dur = rb_hash_aref(rb_opts, CSTR2SYM("duration"));
+    rb_dur = rb_hash_aref(rb_opts, rb_sDuration);
     msg->duration = (MusicTimeStamp) (PRIM_NUM_P(rb_dur)) ? NUM2DBL(rb_dur) : 1.0;
     
     return self;
@@ -658,6 +675,19 @@ midi_note_message_duration (VALUE self)
     return UINT2NUM(msg->duration);
 }
 
+static VALUE
+midi_note_message_from_const (MIDINoteMessage *msg)
+{
+    VALUE rb_opts;
+    rb_opts = rb_hash_new();
+    rb_hash_aset(rb_opts, rb_sChannel, INT2NUM(msg->channel));
+    rb_hash_aset(rb_opts, rb_sNote, INT2NUM(msg->note));
+    rb_hash_aset(rb_opts, rb_sVelocity, INT2NUM(msg->velocity));
+    rb_hash_aset(rb_opts, rb_sReleaseVelocity, INT2NUM(msg->releaseVelocity));
+    rb_hash_aset(rb_opts, rb_sDuration, rb_float_new(msg->duration));
+    return rb_funcall(rb_cMIDINoteMessage, rb_intern("new"), 1, rb_opts);
+}
+
 /* MIDIChannelMessage */
 
 static void
@@ -682,16 +712,16 @@ midi_channel_message_init (VALUE self, VALUE rb_opts)
     
     Data_Get_Struct(self, MIDIChannelMessage, msg);
     
-    rb_status = rb_hash_aref(rb_opts, CSTR2SYM("status"));
+    rb_status = rb_hash_aref(rb_opts, rb_sStatus);
     if (!FIXNUM_P(rb_status))
         rb_raise(rb_eArgError, ":status is required.");
     else
         msg->status = NUM2DBL(rb_status);
     
-    rb_data1 = rb_hash_aref(rb_opts, CSTR2SYM("data1"));
+    rb_data1 = rb_hash_aref(rb_opts, rb_sData1);
     if (!NIL_P(rb_data1)) msg->data1 = (UInt8) FIX2INT(rb_data1);
     
-    rb_data2 = rb_hash_aref(rb_opts, CSTR2SYM("data2"));
+    rb_data2 = rb_hash_aref(rb_opts, rb_sData2);
     if (!NIL_P(rb_data2)) msg->data2 = (UInt8) FIX2INT(rb_data2);
     
     return self;
@@ -719,6 +749,47 @@ midi_channel_message_data2 (VALUE self)
     MIDIChannelMessage *msg;
     Data_Get_Struct(self, MIDIChannelMessage, msg);
     return UINT2NUM(msg->data2);
+}
+
+static VALUE
+midi_channel_message_from_const (MIDIChannelMessage *msg)
+{
+    VALUE rb_opts = rb_hash_new();
+    switch(msg->status >> 4) {
+    case 0xA: // key pressure
+        rb_hash_aset(rb_opts, rb_sChannel, INT2NUM(msg->status ^ 0xA0));
+        rb_hash_aset(rb_opts, rb_sNote, INT2NUM(msg->data1));
+        rb_hash_aset(rb_opts, rb_sPressure, INT2NUM(msg->data2));
+        return rb_funcall(rb_cMIDIKeyPressureMessage, rb_intern("new"), 1, rb_opts);
+    case 0xB: // control change
+        rb_hash_aset(rb_opts, rb_sChannel, INT2NUM(msg->status ^ 0xB0));
+        rb_hash_aset(rb_opts, rb_sNumber, INT2NUM(msg->data1));
+        rb_hash_aset(rb_opts, rb_sValue, INT2NUM(msg->data2));
+        return rb_funcall(rb_cMIDIControlChangeMessage, rb_intern("new"), 1, rb_opts);
+    case 0xC: // program change
+        rb_hash_aset(rb_opts, rb_sChannel, INT2NUM(msg->status ^ 0xC0));
+        rb_hash_aset(rb_opts, rb_sProgram, INT2NUM(msg->data1));
+        return rb_funcall(rb_cMIDIProgramChangeMessage, rb_intern("new"), 1, rb_opts);
+    case 0xD: // channel pressure
+        rb_hash_aset(rb_opts, rb_sChannel, INT2NUM(msg->status ^ 0xD0));
+        rb_hash_aset(rb_opts, rb_sPressure, INT2NUM(msg->data1));
+        return rb_funcall(rb_cMIDIChannelPressureMessage, rb_intern("new"), 1, rb_opts);
+    case 0xE: // pitch bend
+        rb_hash_aset(rb_opts, rb_sChannel, INT2NUM(msg->status ^ 0xE0));
+        rb_hash_aset(rb_opts, rb_sValue, INT2NUM(msg->data1));
+        return rb_funcall(rb_cMIDIPitchBendMessage, rb_intern("new"), 1, rb_opts);
+    default:
+        rb_raise(rb_eRuntimeError, "Unrecognized message type.");
+    }
+}
+
+/* ExtendedTempoEvent defns */
+static VALUE
+tempo_from_const (ExtendedTempoEvent *ev)
+{
+  VALUE rb_opts = rb_hash_new();
+  rb_hash_aset(rb_opts, CSTR2SYM("bpm"), rb_float_new(ev->bpm));
+  return rb_funcall(rb_cExtendedTempoEvent, rb_intern("new"), 1, rb_opts);
 }
 
 /* MusicEventIterator defns */
@@ -807,8 +878,7 @@ iter_has_current (VALUE self)
     OSStatus err;
     Data_Get_Struct(self, MusicEventIterator, iter);
     require_noerr( err = MusicEventIteratorHasCurrentEvent(*iter, &has_cur), fail );
-    if (has_cur) return Qtrue;
-    else return Qfalse;
+    return has_cur ? Qtrue : Qfalse;
     
     fail:
     raise_osstatus(err, "MusicEventIteratorHasCurrentEvent()");
@@ -822,8 +892,7 @@ iter_has_prev (VALUE self)
     OSStatus err;
     Data_Get_Struct(self, MusicEventIterator, iter);
     require_noerr( err = MusicEventIteratorHasPreviousEvent(*iter, &has_prev), fail );
-    if (has_prev) return Qtrue;
-    else return Qfalse;
+    return has_prev ? Qtrue : Qfalse;
     
     fail:
     raise_osstatus(err, "MusicEventIteratorHasPreviousEvent()");
@@ -837,8 +906,7 @@ iter_has_next (VALUE self)
     OSStatus err;
     Data_Get_Struct(self, MusicEventIterator, iter);
     require_noerr( err = MusicEventIteratorHasNextEvent(*iter, &has_next), fail );
-    if (has_next) return Qtrue;
-    else return Qfalse;
+    return has_next ? Qtrue : Qfalse;
     
     fail:
     raise_osstatus(err, "MusicEventIteratorHasNextEvent()");
@@ -853,6 +921,35 @@ iter_time (VALUE self)
     Data_Get_Struct(self, MusicEventIterator, iter);
     require_noerr( err = MusicEventIteratorGetEventInfo(*iter, &ts, NULL, NULL, NULL), fail );
     return rb_float_new(ts);
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorGetEventInfo()");
+}
+
+static VALUE
+iter_event (VALUE self)
+{
+    MusicEventIterator *iter;
+    UInt32 sz;
+    MusicEventType type;
+    const void *data = 0;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorGetEventInfo(*iter, NULL, &type, &data, &sz), fail );
+    
+    switch(type) {
+    case kMusicEventType_NULL:
+        return Qnil;
+    case kMusicEventType_MIDINoteMessage:
+        return midi_note_message_from_const((MIDINoteMessage*) data);
+    case kMusicEventType_MIDIChannelMessage:
+        return midi_channel_message_from_const((MIDIChannelMessage*) data);
+    case kMusicEventType_ExtendedTempo:
+        return tempo_from_const((ExtendedTempoEvent*) data);
+    default:
+        rb_raise(rb_eNotImpError, "Unsupported event type.");
+        break;
+    }
     
     fail:
     raise_osstatus(err, "MusicEventIteratorGetEventInfo()");
@@ -935,6 +1032,11 @@ Init_music_player ()
     
     /* AudioToolbox::MIDIChannelMessage */
     rb_cMIDIChannelMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIChannelMessage", rb_cObject);
+    rb_cMIDIKeyPressureMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIKeyPressureMessage", rb_cMIDIChannelMessage);
+    rb_cMIDIControlChangeMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIControlChangeMessage", rb_cMIDIChannelMessage);
+    rb_cMIDIProgramChangeMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIProgramChangeMessage", rb_cMIDIChannelMessage);
+    rb_cMIDIChannelPressureMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIChannelPressureMessage", rb_cMIDIChannelMessage);
+    rb_cMIDIPitchBendMessage = rb_define_class_under(rb_mAudioToolbox, "MIDIPitchBendMessage", rb_cMIDIChannelMessage);
     rb_define_alloc_func(rb_cMIDIChannelMessage, midi_channel_message_alloc);
     rb_define_method(rb_cMIDIChannelMessage, "initialize", midi_channel_message_init, 1);
     rb_define_method(rb_cMIDIChannelMessage, "status", midi_channel_message_status, 0);
@@ -955,4 +1057,22 @@ Init_music_player ()
     rb_define_method(rb_cMusicEventIterator, "next?", iter_has_next, 0);
     rb_define_method(rb_cMusicEventIterator, "prev?", iter_has_prev, 0);
     rb_define_method(rb_cMusicEventIterator, "time", iter_time, 0);
+    rb_define_method(rb_cMusicEventIterator, "event", iter_event, 0);
+    
+    /* Symbols */
+    rb_sBeat = CSTR2SYM("beat");
+    rb_sChannel = CSTR2SYM("channel");
+    rb_sData1 = CSTR2SYM("data1");
+    rb_sData2 = CSTR2SYM("data2");
+    rb_sDuration = CSTR2SYM("duration");
+    rb_sNote = CSTR2SYM("note");
+    rb_sNumber = CSTR2SYM("number");
+    rb_sPressure = CSTR2SYM("pressure");
+    rb_sProgram = CSTR2SYM("program");
+    rb_sReleaseVelocity = CSTR2SYM("release_velocity");
+    rb_sSamp = CSTR2SYM("samp");
+    rb_sSecs = CSTR2SYM("secs");
+    rb_sStatus = CSTR2SYM("status");
+    rb_sValue = CSTR2SYM("value");
+    rb_sVelocity = CSTR2SYM("velocity");
 }

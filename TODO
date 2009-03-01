@@ -75,7 +75,7 @@ Excludes deprecated API calls.
 + MusicEventIteratorSeek
 + MusicEventIteratorNextEvent
 + MusicEventIteratorPreviousEvent
-- MusicEventIteratorGetEventInfo
++ MusicEventIteratorGetEventInfo
 - MusicEventIteratorSetEventInfo
 - MusicEventIteratorSetEventTime
 - MusicEventIteratorDeleteEvent
@@ -85,6 +85,6 @@ Excludes deprecated API calls.
 
 LEGEND
 =====
--       Not Implemented
-+       Implemented
-?       May implement
+- Not Implemented
++ Implemented
+? May implement
