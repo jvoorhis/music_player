@@ -4,13 +4,13 @@ class MusicEventIteratorTest < Test::Unit::TestCase
   def setup
     @sequence = MusicSequence.new
     @track = @sequence.tracks.new
-    @track.add 0.0, @ev1=MIDINoteMessage.new(:note => 60)
-    @track.add 1.0, @ev2=MIDINoteMessage.new(:note => 67)
+    @track.add 0, @ev1=MIDINoteMessage.new(:note => 60)
+    @track.add 1, @ev2=MIDINoteMessage.new(:note => 67)
     @iter = @track.iterator
   end
   
   def test_seek
-    assert_nothing_raised { @iter.seek(0.0) }
+    assert_nothing_raised { @iter.seek(0) }
   end
   
   def test_current?
@@ -92,5 +92,20 @@ class MusicEventIteratorTest < Test::Unit::TestCase
     track.add 0, ev=ExtendedTempoEvent.new(:bpm => 120)
     iter = track.iterator
     assert_equal ev, iter.event
+  end
+  
+  def test_event_set_time
+    # swap note onsets
+    assert_equal 0, @iter.time
+    @iter.time = 1
+    assert_equal 1, @iter.time
+    @iter.next
+    assert_equal 1, @iter.time
+    @iter.time = 0
+    
+    @iter.seek 0
+    assert_equal @ev2, @iter.event
+    @iter.next
+    assert_equal @ev1, @iter.event
   end
 end

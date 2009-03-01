@@ -914,7 +914,7 @@ iter_has_next (VALUE self)
 }
 
 static VALUE
-iter_time (VALUE self)
+iter_get_time (VALUE self)
 {
     MusicEventIterator *iter;
     MusicTimeStamp ts;
@@ -928,12 +928,26 @@ iter_time (VALUE self)
 }
 
 static VALUE
+iter_set_time (VALUE self, VALUE rb_time)
+{
+    MusicEventIterator *iter;
+    MusicTimeStamp ts = NUM2DBL(rb_time);
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorSetEventTime(*iter, ts), fail );
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorSetEventTime()");
+}
+
+static VALUE
 iter_event (VALUE self)
 {
     MusicEventIterator *iter;
     UInt32 sz;
     MusicEventType type;
-    const void *data = 0;
+    const void *data;
     OSStatus err;
     Data_Get_Struct(self, MusicEventIterator, iter);
     require_noerr( err = MusicEventIteratorGetEventInfo(*iter, NULL, &type, &data, &sz), fail );
@@ -965,10 +979,8 @@ Init_music_player ()
      * CoreMIDI
      */
     rb_mCoreMIDI = rb_define_module("CoreMIDI");
-    rb_define_module_function(rb_mCoreMIDI, "get_number_of_destinations",
-                              core_midi_get_number_of_destinations, 0);
-    rb_define_module_function(rb_mCoreMIDI, "get_destination",
-                              core_midi_get_destination, 1);
+    rb_define_module_function(rb_mCoreMIDI, "get_number_of_destinations", core_midi_get_number_of_destinations, 0);
+    rb_define_module_function(rb_mCoreMIDI, "get_destination", core_midi_get_destination, 1);
     
     /*
      * AudioToolbox
@@ -1057,7 +1069,8 @@ Init_music_player ()
     rb_define_method(rb_cMusicEventIterator, "current?", iter_has_current, 0);
     rb_define_method(rb_cMusicEventIterator, "next?", iter_has_next, 0);
     rb_define_method(rb_cMusicEventIterator, "prev?", iter_has_prev, 0);
-    rb_define_method(rb_cMusicEventIterator, "time", iter_time, 0);
+    rb_define_method(rb_cMusicEventIterator, "time", iter_get_time, 0);
+    rb_define_method(rb_cMusicEventIterator, "time=", iter_set_time, 1);
     rb_define_method(rb_cMusicEventIterator, "event", iter_event, 0);
     
     /* Symbols */
