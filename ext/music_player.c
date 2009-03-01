@@ -32,6 +32,7 @@ static VALUE rb_cMusicEventIterator = Qnil;
 
 /* Ruby symbols */
 static VALUE rb_sBeat = Qnil;
+static VALUE rb_sBpm = Qnil;
 static VALUE rb_sChannel = Qnil;
 static VALUE rb_sData1 = Qnil;
 static VALUE rb_sData2 = Qnil;
@@ -788,7 +789,7 @@ static VALUE
 tempo_from_const (ExtendedTempoEvent *ev)
 {
   VALUE rb_opts = rb_hash_new();
-  rb_hash_aset(rb_opts, CSTR2SYM("bpm"), rb_float_new(ev->bpm));
+  rb_hash_aset(rb_opts, rb_sBpm, rb_float_new(ev->bpm));
   return rb_funcall(rb_cExtendedTempoEvent, rb_intern("new"), 1, rb_opts);
 }
 
@@ -1061,6 +1062,7 @@ Init_music_player ()
     
     /* Symbols */
     rb_sBeat = CSTR2SYM("beat");
+    rb_sBpm = CSTR2SYM("bpm");
     rb_sChannel = CSTR2SYM("channel");
     rb_sData1 = CSTR2SYM("data1");
     rb_sData2 = CSTR2SYM("data2");
