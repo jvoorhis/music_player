@@ -76,9 +76,9 @@ Excludes deprecated API calls.
 + MusicEventIteratorNextEvent
 + MusicEventIteratorPreviousEvent
 + MusicEventIteratorGetEventInfo
-- MusicEventIteratorSetEventInfo
++ MusicEventIteratorSetEventInfo
 + MusicEventIteratorSetEventTime
-- MusicEventIteratorDeleteEvent
++ MusicEventIteratorDeleteEvent
 + MusicEventIteratorHasPreviousEvent
 + MusicEventIteratorHasNextEvent
 + MusicEventIteratorHasCurrentEvent

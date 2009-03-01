@@ -11,6 +11,11 @@ class MusicEventIteratorTest < Test::Unit::TestCase
   
   def test_seek
     assert_nothing_raised { @iter.seek(0) }
+    assert_equal @ev1, @iter.event
+    # Seeking to a point between event onsets causes
+    # the iterator to advance to the next onset.
+    @iter.seek(0.1) 
+    assert_equal @ev2, @iter.event
   end
   
   def test_current?
@@ -58,7 +63,22 @@ class MusicEventIteratorTest < Test::Unit::TestCase
     @iter.seek(0.0)
     assert_equal 0.0, @iter.time
   end
-
+  
+  def test_set_time
+    # swap note onsets
+    assert_equal 0, @iter.time
+    @iter.time = 1
+    assert_equal 1, @iter.time
+    @iter.next
+    assert_equal 1, @iter.time
+    @iter.time = 0
+    
+    @iter.seek 0
+    assert_equal @ev2, @iter.event
+    @iter.next
+    assert_equal @ev1, @iter.event
+  end
+  
   def test_event__note
     assert_nothing_raised do
       assert_equal @ev1, @iter.event
@@ -94,18 +114,47 @@ class MusicEventIteratorTest < Test::Unit::TestCase
     assert_equal ev, iter.event
   end
   
-  def test_event_set_time
-    # swap note onsets
-    assert_equal 0, @iter.time
-    @iter.time = 1
-    assert_equal 1, @iter.time
+  def test_set_event
+    # swapping notes 
+    @iter.seek(0)
+    @iter.event = @ev2
     @iter.next
-    assert_equal 1, @iter.time
-    @iter.time = 0
+    @iter.event = @ev1
     
-    @iter.seek 0
+    @iter.seek(0)
     assert_equal @ev2, @iter.event
     @iter.next
     assert_equal @ev1, @iter.event
+    
+    # Event types may be altered.
+    @iter.seek(0)
+    @iter.event = cc=MIDIControlChangeMessage.new(:channel => 1, :number => 2, :value => 3)
+    assert_equal cc, @iter.event
+    
+    # Assigning when there is no current event raises an exception.
+    # Use MusicTrack#add to add new events.
+    @iter.next until !@iter.current?
+    assert_raise(EndOfTrack) do
+      @iter.event = MIDINoteMessage.new(:note => 60)
+    end
+    
+    # Tempo tracks are iterable as well.
+    tempo = @sequence.tracks.tempo
+    tempo.add 0, ExtendedTempoEvent.new(:bpm => 120)
+    
+    iter = @sequence.tracks.tempo.iterator
+    assert_equal 120, iter.event.bpm
+    iter.event = ExtendedTempoEvent.new(:bpm => 60)
+    assert_equal 60, iter.event.bpm
+  end
+  
+  def test_delete
+    assert_equal @ev1, @iter.event
+    @iter.delete
+    assert_equal @ev2, @iter.event
+    @iter.delete
+    
+    assert !@iter.current?
+    assert_nothing_raised { @iter.delete }
   end
 end

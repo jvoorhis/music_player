@@ -9,6 +9,9 @@
 /* Convert a C string to a Ruby Symbol. */
 #define CSTR2SYM(str) (ID2SYM(rb_intern(str)))
 
+/* Call ruby's === operator on the given lhs and rhs. */
+#define THRQL(lhs, rhs) (rb_funcall(lhs, rb_intern("==="), 1, rhs))
+
 /* Convert a Ruby String to a CFURLRef. */
 #define PATH2CFURL(path) (rb_path_to_cfurl(path))
 

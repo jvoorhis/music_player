@@ -942,15 +942,14 @@ iter_set_time (VALUE self, VALUE rb_time)
 }
 
 static VALUE
-iter_event (VALUE self)
+iter_get_event (VALUE self)
 {
     MusicEventIterator *iter;
-    UInt32 sz;
     MusicEventType type;
     const void *data;
     OSStatus err;
     Data_Get_Struct(self, MusicEventIterator, iter);
-    require_noerr( err = MusicEventIteratorGetEventInfo(*iter, NULL, &type, &data, &sz), fail );
+    require_noerr( err = MusicEventIteratorGetEventInfo(*iter, NULL, &type, &data, NULL), fail );
     
     switch(type) {
     case kMusicEventType_NULL:
@@ -968,6 +967,51 @@ iter_event (VALUE self)
     
     fail:
     raise_osstatus(err, "MusicEventIteratorGetEventInfo()");
+}
+
+static VALUE
+iter_set_event (VALUE self, VALUE rb_msg)
+{
+    MusicEventIterator *iter;
+    MusicEventType type;
+    const void *data;
+    OSStatus err;
+    
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    
+    if (THRQL(rb_cMIDINoteMessage, rb_msg)) {
+        type = kMusicEventType_MIDINoteMessage;
+        Data_Get_Struct(rb_msg, MIDINoteMessage, data);
+    } else if (THRQL(rb_cMIDIChannelMessage, rb_msg)) {
+        type = kMusicEventType_MIDIChannelMessage;
+        Data_Get_Struct(rb_msg, MIDIChannelMessage, data);
+    } else if (THRQL(rb_cExtendedTempoEvent, rb_msg)) {
+        type = kMusicEventType_ExtendedTempo;
+        ExtendedTempoEvent tmp;
+        tmp.bpm = NUM2DBL(rb_funcall(rb_msg, rb_intern("bpm"), 0));
+        data = &tmp;
+    } else {
+        rb_raise(rb_eTypeError, "Unrecognized event type");
+    }
+    
+    require_noerr( err = MusicEventIteratorSetEventInfo(*iter, type, data), fail );
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorSetEventInfo()");
+}
+
+static VALUE
+iter_delete_event (VALUE self)
+{
+    MusicEventIterator *iter;
+    OSStatus err;
+    Data_Get_Struct(self, MusicEventIterator, iter);
+    require_noerr( err = MusicEventIteratorDeleteEvent(*iter), fail );
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicEventIteratorDeleteEvent()");
 }
 
 /* Initialize extension */
@@ -1071,7 +1115,9 @@ Init_music_player ()
     rb_define_method(rb_cMusicEventIterator, "prev?", iter_has_prev, 0);
     rb_define_method(rb_cMusicEventIterator, "time", iter_get_time, 0);
     rb_define_method(rb_cMusicEventIterator, "time=", iter_set_time, 1);
-    rb_define_method(rb_cMusicEventIterator, "event", iter_event, 0);
+    rb_define_method(rb_cMusicEventIterator, "event", iter_get_event, 0);
+    rb_define_method(rb_cMusicEventIterator, "event=", iter_set_event, 1);
+    rb_define_method(rb_cMusicEventIterator, "delete", iter_delete_event, 0);
     
     /* Symbols */
     rb_sBeat = CSTR2SYM("beat");
