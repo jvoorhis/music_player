@@ -64,9 +64,29 @@ module AudioToolbox
     def add(time, message)
       message.add(time, self)
     end
-
+    
     def iterator
       MusicEventIterator.new(self)
+    end
+    
+    include Enumerable
+    
+    def each
+      i = iterator
+      while i.current?
+        yield i.event
+        i.next
+      end
+      nil
+    end
+    
+    def each_with_time
+      i = iterator
+      while i.current?
+        yield [i.event, i.time]
+        i.next
+      end
+      nil
     end
   end
   
