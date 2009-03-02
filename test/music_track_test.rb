@@ -17,4 +17,52 @@ class MusicTrackTest < Test::Unit::TestCase
     
     assert_equal [ev1, ev2, ev3], @track.map { |x| x }
   end
+
+  def test_loop_info
+    assert_equal({ :duration => 0.0, :number => 1 }, @track.loop_info)
+    @track.loop_info = { :duration => 100.0, :number => 42 }
+    assert_equal({ :duration => 100.0, :number => 42 }, @track.loop_info)
+  end
+
+  def test_offset
+    assert_equal 0.0, @track.offset
+    @track.offset = 1.0
+    assert_equal 1.0, @track.offset
+  end
+
+  def test_mute
+    assert_equal false, @track.mute
+    @track.mute = true
+    assert_equal true, @track.mute
+  end
+  
+  def test_solo
+    assert_equal false, @track.solo
+    @track.solo = true
+    assert_equal true, @track.solo
+  end
+
+  def test_length
+    assert_equal 0, @track.length
+    
+    @track.add 0, MIDINoteMessage.new(:note => 60, :duration => 1)
+    assert_equal 1, @track.length
+    
+    # Length is maximum of the user-set length and the timestamp of the
+    # release of the final event.
+    @track.length = 0.5
+    assert_equal 1, @track.length
+    
+    @track.length = 10
+    assert_equal 10, @track.length
+    
+    @track.add 42, MIDINoteMessage.new(:note => 60, :duration => 1)
+    assert_equal 43, @track.length
+  end
+  
+  def test_resolution
+    # 480 is the default resolution. 960 is also common.
+    assert_equal 480, @sequence.tracks.tempo.resolution
+    assert_raise(ArgumentError) { @track.resolution }
+  end
 end

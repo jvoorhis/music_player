@@ -3,7 +3,7 @@ MUST-HAVE FOR RELEASE
 - Documentation
 - Build automation for 1.8 and 1.9
 + MIDI file I/O
-- Track property support
++ Track property support
 + Event iterator support
 - Better API for working with CoreMIDI destinations
 - Better examples
@@ -52,8 +52,8 @@ Excludes deprecated API calls.
 - MusicTrackSetDestMIDIEndpoint
 ? MusicTrackGetDestNode
 - MusicTrackGetDestMIDIEndpoint
-- MusicTrackSetProperty
-- MusicTrackGetProperty
++ MusicTrackSetProperty
++ MusicTrackGetProperty
 - MusicTrackMoveEvents
 - NewMusicTrackFrom
 - MusicTrackClear

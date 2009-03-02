@@ -501,7 +501,241 @@ track_add_extended_tempo_event (VALUE self, VALUE rb_at, VALUE rb_bpm)
     raise_osstatus(err, "MusicTrackNewExtendedTempoEvent()");
 }
 
-/* MusicSequence#Tracks proxy defns */
+static VALUE
+track_get_loop_info (VALUE self)
+{
+    MusicTrack *track;
+    UInt32 sz;
+    MusicTrackLoopInfo loop_info;
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    require_noerr( err = MusicTrackGetProperty(*track, kSequenceTrackProperty_LoopInfo, &loop_info, &sz), fail );
+
+    if (sz == sizeof(MusicTrackLoopInfo)) {
+        VALUE rb_loop_info = rb_hash_new();
+        rb_hash_aset(rb_loop_info, rb_sDuration, rb_float_new(loop_info.loopDuration));
+        rb_hash_aset(rb_loop_info, rb_sNumber, INT2NUM(loop_info.numberOfLoops));
+        return rb_loop_info;
+    } else {
+        return Qnil;
+    }
+    
+    fail:
+    raise_osstatus(err, "MusicTrackGetProperty()");
+}
+
+static VALUE
+track_set_loop_info (VALUE self, VALUE rb_loop_info)
+{
+    Check_Type(rb_loop_info, T_HASH);
+    MusicTrack *track;
+    MusicTrackLoopInfo loop_info;
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    loop_info.loopDuration = NUM2DBL(rb_hash_aref(rb_loop_info, rb_sDuration));
+    loop_info.numberOfLoops = NUM2DBL(rb_hash_aref(rb_loop_info, rb_sNumber));
+    
+    require_noerr(
+        err = MusicTrackSetProperty(*track, kSequenceTrackProperty_LoopInfo,
+                                    &loop_info, sizeof(MusicTrackLoopInfo)),
+        fail);
+    
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackSetProperty()");
+}
+
+static VALUE
+track_get_offset (VALUE self)
+{
+    MusicTrack *track;
+    UInt32 sz;
+    MusicTimeStamp offset;
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    require_noerr( err = MusicTrackGetProperty(*track, kSequenceTrackProperty_OffsetTime, &offset, &sz), fail );
+    
+    if (sz == sizeof(MusicTimeStamp))
+        return rb_float_new(offset);
+    else
+        return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackGetProperty()");
+}
+
+static VALUE
+track_set_offset (VALUE self, VALUE rb_offset)
+{
+    if (!PRIM_NUM_P(rb_offset))
+        rb_raise(rb_eTypeError, "Expected offset to be a number.");
+    MusicTrack *track;
+    MusicTimeStamp offset = NUM2DBL(rb_offset);
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    
+    require_noerr(
+        err = MusicTrackSetProperty(*track, kSequenceTrackProperty_OffsetTime,
+                                    &offset, sizeof(MusicTimeStamp)),
+        fail);
+    
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackSetProperty()");
+}
+
+static VALUE
+track_get_mute (VALUE self)
+{
+    MusicTrack *track;
+    UInt32 sz;
+    Boolean status;
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    require_noerr( err = MusicTrackGetProperty(*track, kSequenceTrackProperty_MuteStatus, &status, &sz), fail );
+    
+    if (sz == sizeof(Boolean))
+        return status ? Qtrue : Qfalse;
+    else
+        return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackGetProperty()");
+}
+
+static VALUE
+track_set_mute (VALUE self, VALUE rb_status)
+{
+    MusicTrack *track;
+    Boolean status = RTEST(rb_status);
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    
+    require_noerr(
+        err = MusicTrackSetProperty(*track, kSequenceTrackProperty_MuteStatus,
+                                    &status, sizeof(Boolean)),
+        fail);
+    
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackSetProperty()");
+}
+
+
+static VALUE
+track_get_solo (VALUE self)
+{
+    MusicTrack *track;
+    UInt32 sz;
+    Boolean status;
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    require_noerr(
+        err = MusicTrackGetProperty(*track, kSequenceTrackProperty_SoloStatus,
+                                    &status, &sz),
+        fail );
+    
+    if (sz == sizeof(Boolean))
+        return status ? Qtrue : Qfalse;
+    else
+        return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackGetProperty()");
+}
+
+static VALUE
+track_set_solo (VALUE self, VALUE rb_status)
+{
+    MusicTrack *track;
+    Boolean status = RTEST(rb_status);
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    
+    require_noerr(
+        err = MusicTrackSetProperty(*track, kSequenceTrackProperty_SoloStatus,
+                                    &status, sizeof(Boolean)),
+        fail);
+    
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackSetProperty()");
+}
+
+static VALUE
+track_get_length (VALUE self)
+{
+    MusicTrack *track;
+    MusicTimeStamp length;
+    UInt32 sz;
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    
+    require_noerr(
+        err = MusicTrackGetProperty(*track, kSequenceTrackProperty_TrackLength,
+                                    &length, &sz),
+        fail);
+    
+    if (sz == sizeof(MusicTimeStamp))
+        return rb_float_new(length);
+    else
+        return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackGetProperty()");
+}
+
+static VALUE
+track_set_length (VALUE self, VALUE rb_length)
+{
+    if (!PRIM_NUM_P(rb_length))
+        rb_raise(rb_eTypeError, "Expected length to be a number.");
+    MusicTrack *track;
+    MusicTimeStamp length = NUM2DBL(rb_length);
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    
+    require_noerr(
+        err = MusicTrackSetProperty(*track, kSequenceTrackProperty_TrackLength,
+                                    &length, sizeof(MusicTimeStamp)),
+        fail);
+    
+    return Qnil;
+    
+    fail:
+    raise_osstatus(err, "MusicTrackGetProperty()");
+}
+
+static VALUE
+track_get_resolution (VALUE self)
+{
+    MusicTrack *track;
+    SInt16 res;
+    UInt32 sz;
+    OSStatus err;
+    Data_Get_Struct(self, MusicTrack, track);
+    
+    require_noerr(
+        err = MusicTrackGetProperty(*track, kSequenceTrackProperty_TimeResolution, &res, &sz),
+        fail);
+    
+    if (sz == sizeof(SInt16))
+        return INT2FIX(res);
+    else
+        return Qnil;
+
+    fail:
+    if (paramErr == err)
+        rb_raise(rb_eArgError, "Resolution is only available to the tempo track.");
+    else
+        raise_osstatus(err, "MusicTrackGetProperty()");
+}
+
+/* TrackCollection defns */
 
 MusicSequence*
 tracks_get_seq (VALUE rb_tracks)
@@ -1068,6 +1302,17 @@ Init_music_player ()
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
     rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
     rb_define_method(rb_cMusicTrack, "add_extended_tempo_event", track_add_extended_tempo_event, 2);
+    rb_define_method(rb_cMusicTrack, "loop_info", track_get_loop_info, 0);
+    rb_define_method(rb_cMusicTrack, "loop_info=", track_set_loop_info, 1);
+    rb_define_method(rb_cMusicTrack, "offset", track_get_offset, 0);
+    rb_define_method(rb_cMusicTrack, "offset=", track_set_offset, 1);
+    rb_define_method(rb_cMusicTrack, "mute", track_get_mute, 0);
+    rb_define_method(rb_cMusicTrack, "mute=", track_set_mute, 1);
+    rb_define_method(rb_cMusicTrack, "solo", track_get_solo, 0);
+    rb_define_method(rb_cMusicTrack, "solo=", track_set_solo, 1);
+    rb_define_method(rb_cMusicTrack, "length", track_get_length, 0);
+    rb_define_method(rb_cMusicTrack, "length=", track_set_length, 1);
+    rb_define_method(rb_cMusicTrack, "resolution", track_get_resolution, 0);
     
     /* AudioToolbox::MusicSequence#tracks proxy */
     rb_cMusicTrackCollection = rb_define_class_under(rb_mAudioToolbox, "MusicTrackCollection", rb_cObject);
