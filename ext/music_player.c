@@ -9,48 +9,48 @@
 
 /* Ruby type decls */
 
-static VALUE rb_mCoreMIDI = Qnil;
+static VALUE rb_mCoreMIDI;
 
-static VALUE rb_mAudioToolbox = Qnil;
+static VALUE rb_mAudioToolbox;
 
-static VALUE rb_eEndOfTrack = Qnil;
-static VALUE rb_eStartOfTrack = Qnil;
+static VALUE rb_eEndOfTrack;
+static VALUE rb_eStartOfTrack;
 
-static VALUE rb_cMusicPlayer = Qnil;
-static VALUE rb_cMusicSequence = Qnil;
-static VALUE rb_cMusicTrack = Qnil;
-static VALUE rb_cMusicTrackCollection = Qnil;
-static VALUE rb_cMIDINoteMessage = Qnil;
-static VALUE rb_cMIDIChannelMessage = Qnil;
-static VALUE rb_cMIDIKeyPressureMessage = Qnil;
-static VALUE rb_cMIDIControlChangeMessage = Qnil;
-static VALUE rb_cMIDIProgramChangeMessage = Qnil;
-static VALUE rb_cMIDIChannelPressureMessage = Qnil;
-static VALUE rb_cMIDIPitchBendMessage = Qnil;
-static VALUE rb_cExtendedTempoEvent = Qnil;
-static VALUE rb_cMusicEventIterator = Qnil;
+static VALUE rb_cMusicPlayer;
+static VALUE rb_cMusicSequence;
+static VALUE rb_cMusicTrack;
+static VALUE rb_cMusicTrackCollection;
+static VALUE rb_cMIDINoteMessage;
+static VALUE rb_cMIDIChannelMessage;
+static VALUE rb_cMIDIKeyPressureMessage;
+static VALUE rb_cMIDIControlChangeMessage;
+static VALUE rb_cMIDIProgramChangeMessage;
+static VALUE rb_cMIDIChannelPressureMessage;
+static VALUE rb_cMIDIPitchBendMessage;
+static VALUE rb_cExtendedTempoEvent;
+static VALUE rb_cMusicEventIterator;
 
 /* Ruby symbols */
-static VALUE rb_sBeat = Qnil;
-static VALUE rb_sBpm = Qnil;
-static VALUE rb_sChannel = Qnil;
-static VALUE rb_sData1 = Qnil;
-static VALUE rb_sData2 = Qnil;
-static VALUE rb_sDuration = Qnil;
-static VALUE rb_sLength = Qnil;
-static VALUE rb_sLoopInfo = Qnil;
-static VALUE rb_sMute = Qnil;
-static VALUE rb_sNote = Qnil;
-static VALUE rb_sNumber = Qnil;
-static VALUE rb_sPressure = Qnil;
-static VALUE rb_sProgram = Qnil;
-static VALUE rb_sReleaseVelocity = Qnil;
-static VALUE rb_sSamp = Qnil;
-static VALUE rb_sSecs = Qnil;
-static VALUE rb_sSolo = Qnil;
-static VALUE rb_sStatus = Qnil;
-static VALUE rb_sValue = Qnil;
-static VALUE rb_sVelocity = Qnil;
+static VALUE rb_sBeat;
+static VALUE rb_sBpm;
+static VALUE rb_sChannel;
+static VALUE rb_sData1;
+static VALUE rb_sData2;
+static VALUE rb_sDuration;
+static VALUE rb_sLength;
+static VALUE rb_sLoopInfo;
+static VALUE rb_sMute;
+static VALUE rb_sNote;
+static VALUE rb_sNumber;
+static VALUE rb_sPressure;
+static VALUE rb_sProgram;
+static VALUE rb_sReleaseVelocity;
+static VALUE rb_sSamp;
+static VALUE rb_sSecs;
+static VALUE rb_sSolo;
+static VALUE rb_sStatus;
+static VALUE rb_sValue;
+static VALUE rb_sVelocity;
 
 /* Utils */
 
