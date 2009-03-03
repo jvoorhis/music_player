@@ -99,8 +99,10 @@ static void
 player_free (MusicPlayer *player)
 {
     OSStatus err;
-    require_noerr( err = DisposeMusicPlayer(*player), fail );
-    free(player);
+    if (player) {
+        require_noerr( err = DisposeMusicPlayer(*player), fail );
+        free(player);
+    }
     return;
     
     fail:
@@ -268,8 +270,10 @@ static void
 sequence_free (MusicSequence *seq)
 {
     OSStatus err;
-    require_noerr( err = DisposeMusicSequence(*seq), fail );
-    free(seq);
+    if (seq) {
+        require_noerr( err = DisposeMusicSequence(*seq), fail );
+        free(seq);
+    }
     return;
     
     fail:
@@ -405,7 +409,7 @@ sequence_load (VALUE self, VALUE rb_path)
 void
 track_free (MusicTrack *track)
 {
-    free(track);
+    if(track) free(track);
 }
 
 static VALUE
@@ -857,7 +861,7 @@ tracks_delete_internal (VALUE self, VALUE rb_track)
 static void
 midi_note_message_free (MIDINoteMessage *msg)
 {
-    free(msg);
+    if (msg) free(msg);
 }
 
 static VALUE
@@ -955,7 +959,7 @@ midi_note_message_from_const (MIDINoteMessage *msg)
 static void
 midi_channel_message_free (MIDIChannelMessage *msg)
 {
-    free(msg);
+    if (msg) free(msg);
 }
 
 static VALUE
