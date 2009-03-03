@@ -28,9 +28,9 @@ module AudioToolbox
       0.upto(size-1) { |i| yield self[i] }
     end
     
-    def new
+    def new(options=nil)
       @lock.synchronize do
-        track = MusicTrack.send(:new, @sequence)
+        track = MusicTrack.send(:new, @sequence, options)
         @tracks << track
         track
       end

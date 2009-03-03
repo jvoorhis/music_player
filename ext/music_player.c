@@ -37,6 +37,9 @@ static VALUE rb_sChannel = Qnil;
 static VALUE rb_sData1 = Qnil;
 static VALUE rb_sData2 = Qnil;
 static VALUE rb_sDuration = Qnil;
+static VALUE rb_sLength = Qnil;
+static VALUE rb_sLoopInfo = Qnil;
+static VALUE rb_sMute = Qnil;
 static VALUE rb_sNote = Qnil;
 static VALUE rb_sNumber = Qnil;
 static VALUE rb_sPressure = Qnil;
@@ -44,6 +47,7 @@ static VALUE rb_sProgram = Qnil;
 static VALUE rb_sReleaseVelocity = Qnil;
 static VALUE rb_sSamp = Qnil;
 static VALUE rb_sSecs = Qnil;
+static VALUE rb_sSolo = Qnil;
 static VALUE rb_sStatus = Qnil;
 static VALUE rb_sValue = Qnil;
 static VALUE rb_sVelocity = Qnil;
@@ -405,9 +409,29 @@ track_free (MusicTrack *track)
 }
 
 static VALUE
-track_init (VALUE self, VALUE rb_seq)
+track_init (int argc, VALUE *argv, VALUE self)
 {
+    VALUE rb_seq, rb_options;
+    rb_scan_args(argc, argv, "11", &rb_seq, &rb_options);
+    
     rb_iv_set(self, "@sequence", rb_seq);
+    
+    if (T_HASH == TYPE(rb_options)) {
+        VALUE loop_info = rb_hash_aref(rb_options, rb_sLoopInfo),
+              mute      = rb_hash_aref(rb_options, rb_sMute),
+              solo      = rb_hash_aref(rb_options, rb_sSolo),
+              length    = rb_hash_aref(rb_options, rb_sLength);
+        
+        if (!NIL_P(loop_info))
+            rb_funcall(self, rb_intern("loop_info="), 1, loop_info);
+        if (!NIL_P(mute))
+            rb_funcall(self, rb_intern("mute="), 1, mute);
+        if (!NIL_P(solo))
+            rb_funcall(self, rb_intern("solo="), 1, solo);
+        if (!NIL_P(length))
+            rb_funcall(self, rb_intern("length="), 1, length);
+    }
+    
     return self;
 }
 
@@ -422,18 +446,21 @@ track_internal_new (VALUE rb_seq, MusicTrack *track)
 }
 
 static VALUE
-track_new (VALUE class, VALUE rb_seq)
+track_new (int argc, VALUE *argv, VALUE class)
 {
+    VALUE rb_seq, rb_options, rb_track, init_argv[2];
     MusicSequence *seq;
     MusicTrack *track;
     OSStatus err;
-    VALUE rb_track, argv[1];
     
+    rb_scan_args(argc, argv, "11", &rb_seq, &rb_options);
     Data_Get_Struct(rb_seq, MusicSequence, seq);
+    
     rb_track = Data_Make_Struct(rb_cMusicTrack, MusicTrack, 0, track_free, track);
     require_noerr( err = MusicSequenceNewTrack(*seq, track), fail );
-    argv[0] = rb_seq;
-    rb_obj_call_init(rb_track, 1, argv);
+    init_argv[0] = rb_seq;
+    init_argv[1] = rb_options;
+    rb_obj_call_init(rb_track, 2, init_argv);
     return rb_track;
 
     fail:
@@ -1297,8 +1324,8 @@ Init_music_player ()
     
     /* AudioToolbox::MusicTrack */
     rb_cMusicTrack = rb_define_class_under(rb_mAudioToolbox, "MusicTrack", rb_cObject);
-    rb_define_singleton_method(rb_cMusicTrack, "new", track_new, 1);
-    rb_define_method(rb_cMusicTrack, "initialize", track_init, 1);
+    rb_define_singleton_method(rb_cMusicTrack, "new", track_new, -1);
+    rb_define_method(rb_cMusicTrack, "initialize", track_init, -1);
     rb_define_method(rb_cMusicTrack, "add_midi_note_message", track_add_midi_note_message, 2);
     rb_define_method(rb_cMusicTrack, "add_midi_channel_message", track_add_midi_channel_message, 2);
     rb_define_method(rb_cMusicTrack, "add_extended_tempo_event", track_add_extended_tempo_event, 2);
@@ -1372,12 +1399,16 @@ Init_music_player ()
     rb_sData2 = CSTR2SYM("data2");
     rb_sDuration = CSTR2SYM("duration");
     rb_sNote = CSTR2SYM("note");
+    rb_sLength = CSTR2SYM("length");
+    rb_sLoopInfo = CSTR2SYM("loop_info");
+    rb_sMute = CSTR2SYM("mute");
     rb_sNumber = CSTR2SYM("number");
     rb_sPressure = CSTR2SYM("pressure");
     rb_sProgram = CSTR2SYM("program");
     rb_sReleaseVelocity = CSTR2SYM("release_velocity");
     rb_sSamp = CSTR2SYM("samp");
     rb_sSecs = CSTR2SYM("secs");
+    rb_sSolo = CSTR2SYM("solo");
     rb_sStatus = CSTR2SYM("status");
     rb_sValue = CSTR2SYM("value");
     rb_sVelocity = CSTR2SYM("velocity");
