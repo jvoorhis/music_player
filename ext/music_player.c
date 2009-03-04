@@ -55,7 +55,7 @@ static VALUE rb_sVelocity;
 
 /* Utils */
 
-#define RAISE_OSSTATUS(error,what) switch(error) {\
+#define RAISE_OSSTATUS(error,what) \
     if (error == kAudioToolboxErr_TrackIndexError) {\
         rb_raise(rb_eRangeError, "Index is out of range.");\
     } else if (error == kAudioToolboxErr_TrackNotFound) {\
