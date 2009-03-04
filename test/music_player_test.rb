@@ -18,6 +18,8 @@ class MusicPlayerTest < Test::Unit::TestCase
     assert @player.playing?
     assert_nothing_raised { assert_nil @player.stop }
     assert !@player.playing?
+
+    assert_raise(NoSequence) { MusicPlayer.new.start }
   end
   
   def test_time

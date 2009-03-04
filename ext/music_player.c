@@ -15,6 +15,7 @@ static VALUE rb_mAudioToolbox;
 
 static VALUE rb_eEndOfTrack;
 static VALUE rb_eStartOfTrack;
+static VALUE rb_eNoSequence;
 
 static VALUE rb_cMusicPlayer;
 static VALUE rb_cMusicSequence;
@@ -54,27 +55,20 @@ static VALUE rb_sVelocity;
 
 /* Utils */
 
-static void
-raise_osstatus (OSStatus err, const char *what)
-{
-    switch (err) {
-    case kAudioToolboxErr_TrackIndexError:
-        rb_raise(rb_eRangeError, "Index is out of range.");
-        break;
-    case kAudioToolboxErr_TrackNotFound:
-        rb_raise(rb_eRangeError, "Track not found.");
-        break;
-    case kAudioToolboxErr_EndOfTrack:
-        rb_raise(rb_eEndOfTrack, "Reached end of track.");
-        break;
-    case kAudioToolboxErr_StartOfTrack:
-        rb_raise(rb_eStartOfTrack, "Reached start of track.");
-        break;
-    default:
-        rb_raise(rb_eRuntimeError, "%s failed with OSStatus %i.", what, (int) err);
-        break;
+#define RAISE_OSSTATUS(error,what) switch(error) {\
+    if (error == kAudioToolboxErr_TrackIndexError) {\
+        rb_raise(rb_eRangeError, "Index is out of range.");\
+    } else if (error == kAudioToolboxErr_TrackNotFound) {\
+        rb_raise(rb_eRangeError, "Track not found.");\
+    } else if (error == kAudioToolboxErr_EndOfTrack) {\
+        rb_raise(rb_eEndOfTrack, "Reached end of track.");\
+    } else if (error == kAudioToolboxErr_StartOfTrack) {\
+        rb_raise(rb_eStartOfTrack, "Reached start of track.");\
+    } else if (error == kAudioToolboxErr_NoSequence) {\
+        rb_raise(rb_eNoSequence, "No sequence was given.");\
+    } else {\
+        rb_raise(rb_eRuntimeError, "%s failed with OSStatus %i.", what, (int)error);\
     }
-}
 
 /* CoreMIDI defns */
 
@@ -126,7 +120,7 @@ player_init (VALUE self)
     return self;
     
     fail:
-    raise_osstatus(err, "NewMusicPlayer()");
+    RAISE_OSSTATUS(err, "NewMusicPlayer()");
 }
 
 static VALUE
@@ -141,7 +135,7 @@ player_is_playing (VALUE self)
     return playing ? Qtrue : Qfalse;
     
     fail:
-    raise_osstatus(err, "MusicPlayerIsPlaying()");
+    RAISE_OSSTATUS(err, "MusicPlayerIsPlaying()");
 }
 
 static VALUE
@@ -165,7 +159,7 @@ player_set_sequence (VALUE self, VALUE rb_seq)
     return rb_seq;
     
     fail:
-    raise_osstatus(err, "MusicPlayerSetSequence()");
+    RAISE_OSSTATUS(err, "MusicPlayerSetSequence()");
 }
 
 static VALUE
@@ -179,7 +173,7 @@ player_start (VALUE self)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicPlayerStart()");
+    RAISE_OSSTATUS(err, "MusicPlayerStart()");
 }
 
 static VALUE
@@ -193,7 +187,7 @@ player_stop (VALUE self)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicPlayerStop()");
+    RAISE_OSSTATUS(err, "MusicPlayerStop()");
 }
 
 static VALUE
@@ -208,7 +202,7 @@ player_get_time (VALUE self)
     return rb_float_new((Float64) ts);
     
     fail:
-    raise_osstatus(err, "MusicPlayerGetTime()");
+    RAISE_OSSTATUS(err, "MusicPlayerGetTime()");
 }
 
 static VALUE
@@ -227,7 +221,7 @@ player_set_time (VALUE self, VALUE rb_ts)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicPlayerSetTime()");
+    RAISE_OSSTATUS(err, "MusicPlayerSetTime()");
 }
 
 static VALUE
@@ -242,7 +236,7 @@ player_get_play_rate_scalar (VALUE self)
     return rb_float_new(scalar);
 
     fail:
-    raise_osstatus(err, "MusicPlayerGetPlayRateScalar()");
+    RAISE_OSSTATUS(err, "MusicPlayerGetPlayRateScalar()");
 }
 
 static VALUE
@@ -261,7 +255,7 @@ player_set_play_rate_scalar (VALUE self, VALUE rb_scalar)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicPlayerSetPlayRateScalar()");
+    RAISE_OSSTATUS(err, "MusicPlayerSetPlayRateScalar()");
 }
 
 /* Sequence defns */
@@ -300,7 +294,7 @@ sequence_init (VALUE self)
     return self;
     
     fail:
-    raise_osstatus(err, "NewMusicSequence()");
+    RAISE_OSSTATUS(err, "NewMusicSequence()");
 }
 
 static VALUE
@@ -317,7 +311,7 @@ sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicSequenceSetMIDIEndpoint()");
+    RAISE_OSSTATUS(err, "MusicSequenceSetMIDIEndpoint()");
 }
 
 static VALUE
@@ -342,7 +336,7 @@ sequence_get_type (VALUE self)
     }
     
     fail:
-    raise_osstatus(err, "MusicSequenceGetSequenceType()");
+    RAISE_OSSTATUS(err, "MusicSequenceGetSequenceType()");
 }
 
 static VALUE
@@ -365,7 +359,7 @@ sequence_set_type (VALUE self, VALUE rb_type)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicSequenceSetSequenceType()");
+    RAISE_OSSTATUS(err, "MusicSequenceSetSequenceType()");
 }
 
 static VALUE
@@ -383,7 +377,7 @@ sequence_save (VALUE self, VALUE rb_path)
     
     fail:
     CFRelease(url);
-    raise_osstatus(err, "MusicSequenceFileCreate()");
+    RAISE_OSSTATUS(err, "MusicSequenceFileCreate()");
 }
 
 static VALUE
@@ -401,12 +395,12 @@ sequence_load (VALUE self, VALUE rb_path)
     
     fail:
     CFRelease(url);
-    raise_osstatus(err, "MusicSequenceFileLoad()");
+    RAISE_OSSTATUS(err, "MusicSequenceFileLoad()");
 }
 
 /* Track defns */
 
-void
+static void
 track_free (MusicTrack *track)
 {
     if(track) free(track);
@@ -468,7 +462,7 @@ track_new (int argc, VALUE *argv, VALUE class)
     return rb_track;
 
     fail:
-    raise_osstatus(err, "MusicSequenceNewTrack()");
+    RAISE_OSSTATUS(err, "MusicSequenceNewTrack()");
 }
 
 static VALUE
@@ -485,7 +479,7 @@ track_add_midi_note_message (VALUE self, VALUE rb_at, VALUE rb_msg)
     return Qnil;
 
     fail:
-    raise_osstatus(err, "MusicTrackNewMIDINoteEvent()");
+    RAISE_OSSTATUS(err, "MusicTrackNewMIDINoteEvent()");
 }
 
 static VALUE
@@ -502,7 +496,7 @@ track_add_midi_channel_message (VALUE self, VALUE rb_at, VALUE rb_msg)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackNewMIDIChannelEvent()");
+    RAISE_OSSTATUS(err, "MusicTrackNewMIDIChannelEvent()");
 }
 
 static VALUE
@@ -529,7 +523,7 @@ track_add_extended_tempo_event (VALUE self, VALUE rb_at, VALUE rb_bpm)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackNewExtendedTempoEvent()");
+    RAISE_OSSTATUS(err, "MusicTrackNewExtendedTempoEvent()");
 }
 
 static VALUE
@@ -552,7 +546,7 @@ track_get_loop_info (VALUE self)
     }
     
     fail:
-    raise_osstatus(err, "MusicTrackGetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackGetProperty()");
 }
 
 static VALUE
@@ -574,7 +568,7 @@ track_set_loop_info (VALUE self, VALUE rb_loop_info)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackSetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackSetProperty()");
 }
 
 static VALUE
@@ -593,7 +587,7 @@ track_get_offset (VALUE self)
         return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackGetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackGetProperty()");
 }
 
 static VALUE
@@ -614,7 +608,7 @@ track_set_offset (VALUE self, VALUE rb_offset)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackSetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackSetProperty()");
 }
 
 static VALUE
@@ -633,7 +627,7 @@ track_get_mute (VALUE self)
         return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackGetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackGetProperty()");
 }
 
 static VALUE
@@ -652,9 +646,8 @@ track_set_mute (VALUE self, VALUE rb_status)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackSetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackSetProperty()");
 }
-
 
 static VALUE
 track_get_solo (VALUE self)
@@ -675,7 +668,7 @@ track_get_solo (VALUE self)
         return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackGetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackGetProperty()");
 }
 
 static VALUE
@@ -694,7 +687,7 @@ track_set_solo (VALUE self, VALUE rb_status)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackSetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackSetProperty()");
 }
 
 static VALUE
@@ -717,7 +710,7 @@ track_get_length (VALUE self)
         return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackGetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackGetProperty()");
 }
 
 static VALUE
@@ -738,7 +731,7 @@ track_set_length (VALUE self, VALUE rb_length)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicTrackGetProperty()");
+    RAISE_OSSTATUS(err, "MusicTrackGetProperty()");
 }
 
 static VALUE
@@ -763,12 +756,12 @@ track_get_resolution (VALUE self)
     if (paramErr == err)
         rb_raise(rb_eArgError, "Resolution is only available to the tempo track.");
     else
-        raise_osstatus(err, "MusicTrackGetProperty()");
+        RAISE_OSSTATUS(err, "MusicTrackGetProperty()");
 }
 
 /* TrackCollection defns */
 
-MusicSequence*
+static MusicSequence*
 tracks_get_seq (VALUE rb_tracks)
 {
     MusicSequence *seq;
@@ -788,7 +781,7 @@ tracks_size (VALUE self)
     return UINT2NUM(track_count);
     
     fail:
-    raise_osstatus(err, "MusicSequenceGetTrackCount()");
+    RAISE_OSSTATUS(err, "MusicSequenceGetTrackCount()");
 }
 
 static VALUE
@@ -804,7 +797,7 @@ tracks_get_ind_track_internal (VALUE self, VALUE rb_key)
     return track_internal_new(rb_seq, track);
     
     fail:
-    raise_osstatus(err, "MusicSequenceGetIndTrack()");
+    RAISE_OSSTATUS(err, "MusicSequenceGetIndTrack()");
 }
 
 static VALUE
@@ -823,7 +816,7 @@ tracks_index (VALUE self, VALUE rb_track)
     return UINT2NUM(i);
     
     fail:
-    raise_osstatus(err, "MusicSequenceGetTrackIndex()");
+    RAISE_OSSTATUS(err, "MusicSequenceGetTrackIndex()");
 }
 
 static VALUE
@@ -838,7 +831,7 @@ tracks_tempo_internal (VALUE self)
     return track_internal_new(rb_seq, track);
     
     fail:
-    raise_osstatus(err, "MusicSequenceGetTempoTrack()");
+    RAISE_OSSTATUS(err, "MusicSequenceGetTempoTrack()");
 }
 
 static VALUE
@@ -853,7 +846,7 @@ tracks_delete_internal (VALUE self, VALUE rb_track)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicSequenceDisposeTrack()");
+    RAISE_OSSTATUS(err, "MusicSequenceDisposeTrack()");
 }
 
 /* MIDINoteMessage */
@@ -1089,7 +1082,7 @@ iter_init (VALUE self, VALUE rb_track)
     return self;
     
     fail:
-    raise_osstatus(err, "NewMusicEventIterator()");
+    RAISE_OSSTATUS(err, "NewMusicEventIterator()");
 }
 
 static VALUE
@@ -1107,7 +1100,7 @@ iter_seek (VALUE self, VALUE rb_time)
     return Qnil;
 
     fail:
-    raise_osstatus(err, "MusicEventIteratorSeek()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorSeek()");
 }
 
 static VALUE
@@ -1120,7 +1113,7 @@ iter_next (VALUE self)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorNextEvent()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorNextEvent()");
 }
 
 static VALUE
@@ -1133,7 +1126,7 @@ iter_prev (VALUE self)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorPreviousEvent()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorPreviousEvent()");
 }
 
 static VALUE
@@ -1147,7 +1140,7 @@ iter_has_current (VALUE self)
     return has_cur ? Qtrue : Qfalse;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorHasCurrentEvent()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorHasCurrentEvent()");
 }
 
 static VALUE
@@ -1161,7 +1154,7 @@ iter_has_prev (VALUE self)
     return has_prev ? Qtrue : Qfalse;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorHasPreviousEvent()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorHasPreviousEvent()");
 }
 
 static VALUE
@@ -1175,7 +1168,7 @@ iter_has_next (VALUE self)
     return has_next ? Qtrue : Qfalse;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorHasNextEvent()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorHasNextEvent()");
 }
 
 static VALUE
@@ -1189,7 +1182,7 @@ iter_get_time (VALUE self)
     return rb_float_new(ts);
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorGetEventInfo()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorGetEventInfo()");
 }
 
 static VALUE
@@ -1203,7 +1196,7 @@ iter_set_time (VALUE self, VALUE rb_time)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorSetEventTime()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorSetEventTime()");
 }
 
 static VALUE
@@ -1231,7 +1224,7 @@ iter_get_event (VALUE self)
     }
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorGetEventInfo()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorGetEventInfo()");
 }
 
 static VALUE
@@ -1263,7 +1256,7 @@ iter_set_event (VALUE self, VALUE rb_msg)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorSetEventInfo()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorSetEventInfo()");
 }
 
 static VALUE
@@ -1276,7 +1269,7 @@ iter_delete_event (VALUE self)
     return Qnil;
     
     fail:
-    raise_osstatus(err, "MusicEventIteratorDeleteEvent()");
+    RAISE_OSSTATUS(err, "MusicEventIteratorDeleteEvent()");
 }
 
 /* Initialize extension */
@@ -1301,6 +1294,7 @@ Init_music_player ()
      */
     rb_eEndOfTrack = rb_define_class_under(rb_mAudioToolbox, "EndOfTrack", rb_eStandardError);
     rb_eStartOfTrack = rb_define_class_under(rb_mAudioToolbox, "StartOfTrack", rb_eStandardError);
+    rb_eNoSequence = rb_define_class_under(rb_mAudioToolbox, "NoSequence", rb_eStandardError);
     
     /* AudioToolbox::MusicPlayer */
     rb_cMusicPlayer = rb_define_class_under(rb_mAudioToolbox, "MusicPlayer", rb_cObject);
