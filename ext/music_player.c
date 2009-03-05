@@ -13,9 +13,11 @@ static VALUE rb_mCoreMIDI;
 
 static VALUE rb_mAudioToolbox;
 
+static VALUE rb_eTrackNotFound;
 static VALUE rb_eEndOfTrack;
 static VALUE rb_eStartOfTrack;
 static VALUE rb_eNoSequence;
+static VALUE rb_eIllegalTrackDestination;
 
 static VALUE rb_cMusicPlayer;
 static VALUE rb_cMusicSequence;
@@ -59,11 +61,13 @@ static VALUE rb_sVelocity;
     if (error == kAudioToolboxErr_TrackIndexError) {\
         rb_raise(rb_eRangeError, "Index is out of range.");\
     } else if (error == kAudioToolboxErr_TrackNotFound) {\
-        rb_raise(rb_eRangeError, "Track not found.");\
+        rb_raise(rb_eTrackNotFound, "Track not found.");\
     } else if (error == kAudioToolboxErr_EndOfTrack) {\
         rb_raise(rb_eEndOfTrack, "Reached end of track.");\
     } else if (error == kAudioToolboxErr_StartOfTrack) {\
         rb_raise(rb_eStartOfTrack, "Reached start of track.");\
+    } else if (error == kAudioToolboxErr_IllegalTrackDestination) {\
+        rb_raise(rb_eIllegalTrackDestination, "Illegal track destination.");\
     } else if (error == kAudioToolboxErr_NoSequence) {\
         rb_raise(rb_eNoSequence, "No sequence was given.");\
     } else {\
@@ -797,7 +801,11 @@ tracks_get_ind_track_internal (VALUE self, VALUE rb_key)
     return track_internal_new(rb_seq, track);
     
     fail:
-    RAISE_OSSTATUS(err, "MusicSequenceGetIndTrack()");
+    if (err == kAudioToolboxErr_TrackIndexError) {
+      return Qnil;
+    } else {
+      RAISE_OSSTATUS(err, "MusicSequenceGetIndTrack()");
+    }
 }
 
 static VALUE
@@ -1292,9 +1300,11 @@ Init_music_player ()
     /*
      * AudioToolbox exceptions
      */
+    rb_eTrackNotFound = rb_define_class_under(rb_mAudioToolbox, "TrackNotFound", rb_eStandardError);
     rb_eEndOfTrack = rb_define_class_under(rb_mAudioToolbox, "EndOfTrack", rb_eStandardError);
     rb_eStartOfTrack = rb_define_class_under(rb_mAudioToolbox, "StartOfTrack", rb_eStandardError);
     rb_eNoSequence = rb_define_class_under(rb_mAudioToolbox, "NoSequence", rb_eStandardError);
+    rb_eIllegalTrackDestination = rb_define_class_under(rb_mAudioToolbox, "IllegalTrackDestination", rb_eStandardError);
     
     /* AudioToolbox::MusicPlayer */
     rb_cMusicPlayer = rb_define_class_under(rb_mAudioToolbox, "MusicPlayer", rb_cObject);

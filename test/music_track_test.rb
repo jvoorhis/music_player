@@ -6,6 +6,18 @@ class MusicTrackTest < Test::Unit::TestCase
     @track = @sequence.tracks.new
   end
   
+  def test_add
+    assert_nothing_raised do
+      @track.add 0, MIDINoteMessage.new(:note => 60)
+      # a representative channel message
+      @track.add 0, MIDIControlChangeMessage.new(:channel => 0, :number => 0, :value => 0)
+    end
+    
+    assert_raise(IllegalTrackDestination) do
+      @track.add 0, ExtendedTempoEvent.new(:bpm => 120)
+    end
+  endp
+  
   def test_iterator
     assert_kind_of MusicEventIterator, @track.iterator
   end
@@ -68,7 +80,7 @@ class MusicTrackTest < Test::Unit::TestCase
 
   def test_initialize
     track = @sequence.tracks.new(:loop_info => { :duration => 10,
-                                                 :number   => 3},
+                                                 :number   => 3 },
                                  :mute      => true,
                                  :solo      => true,
                                  :length    => 10)

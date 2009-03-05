@@ -12,7 +12,7 @@ class MusicSequenceTracksEnumerableTest < Test::Unit::TestCase
   
   def test_at_index
     assert @sequence.tracks[0]
-    assert_raise(RangeError) { @sequence.tracks[42] }
+    assert_nil @sequence.tracks[42]
     
     assert_equal @sequence.tracks[0].object_id,
                  @sequence.tracks[0].object_id
@@ -35,7 +35,7 @@ class MusicSequenceTracksEnumerableTest < Test::Unit::TestCase
     
     seq = MusicSequence.new
     track = seq.tracks.new
-    assert_raise(RangeError) { @sequence.tracks.index(track) }
+    assert_raise(TrackNotFound) { @sequence.tracks.index(track) }
   end
   
   def test_delete
