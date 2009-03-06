@@ -16,7 +16,7 @@ class MusicTrackTest < Test::Unit::TestCase
     assert_raise(IllegalTrackDestination) do
       @track.add 0, ExtendedTempoEvent.new(:bpm => 120)
     end
-  endp
+  end
   
   def test_iterator
     assert_kind_of MusicEventIterator, @track.iterator
@@ -77,7 +77,7 @@ class MusicTrackTest < Test::Unit::TestCase
     assert_equal 480, @sequence.tracks.tempo.resolution
     assert_raise(ArgumentError) { @track.resolution }
   end
-
+  
   def test_initialize
     track = @sequence.tracks.new(:loop_info => { :duration => 10,
                                                  :number   => 3 },
