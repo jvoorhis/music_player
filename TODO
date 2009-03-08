@@ -5,7 +5,9 @@ MUST-HAVE FOR RELEASE
 + MIDI file I/O
 + Track property support
 + Event iterator support
-- Better API for working with CoreMIDI destinations
++ Better API for working with CoreMIDI destinations
+  TODO: a general api for working with MIDI endpoints might enjoy its own library. Here we define a simple
+  protocol using implicit conversion via #to_int to extract the MIDIEndpointRef.
 - Better examples
 
 API PUNCH LIST
