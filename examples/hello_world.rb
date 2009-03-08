@@ -1,9 +1,7 @@
 require 'music_player'
 include AudioToolbox
 
-player = MusicPlayer.new
 sequence = MusicSequence.new
-player.sequence = sequence
 sequence.midi_endpoint = CoreMIDI.get_destination(ARGV.shift.to_i)
 
 tempo = sequence.tracks.tempo
@@ -18,6 +16,8 @@ track.add 3.0, MIDINoteMessage.new(:note => 64, :velocity => 110, :duration => 2
 track.add 3.0, MIDINoteMessage.new(:note => 67, :velocity => 110, :duration => 2.0)
 track.add 3.0, MIDINoteMessage.new(:note => 72, :velocity => 110, :duration => 2.0)
 
+player = MusicPlayer.new
+player.sequence = sequence
 player.start
 sleep 3
 player.stop
