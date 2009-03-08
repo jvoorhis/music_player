@@ -302,12 +302,10 @@ sequence_init (VALUE self)
 }
 
 static VALUE
-sequence_set_midi_endpoint (VALUE self, VALUE endpoint_ref)
+sequence_set_midi_endpoint (VALUE self, VALUE rb_endpoint_ref)
 {
-    if (NIL_P(endpoint_ref)) { return Qnil; }
-    
     MusicSequence *seq;
-    UInt32 ref = NUM2ULONG(endpoint_ref);
+    UInt32 ref = NUM2ULONG(rb_funcall(rb_mKernel, rb_intern("Integer"), 1, rb_endpoint_ref));
     OSStatus err;
     
     Data_Get_Struct(self, MusicSequence, seq);
