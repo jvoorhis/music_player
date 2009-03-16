@@ -1,15 +1,23 @@
+require 'fileutils'
 require 'rake/testtask'
+require 'rbconfig'
 
-task :build do
+def rb_cmd
+  @rb_cmd ||= File.join(Config::CONFIG['bindir'],
+                        Config::CONFIG['ruby_install_name']
+                        ).sub(/.*\s.*/m, '"\&"')
+end
+
+task :build do; puts rb_cmd
   Dir.chdir('ext') do
-    system('ruby', 'extconf.rb')
+    system(rb_cmd, 'extconf.rb')
     system('make')
   end
 end
 
 task :clean do
-  Dir.chdir('ext') do
-    system('make', 'clean')
+  Dir['ext/*{Makefile,.o,.bundle}'].each do |path|
+    FileUtils.rm_rf(path)
   end
 end
 
