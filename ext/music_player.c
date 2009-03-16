@@ -262,6 +262,24 @@ player_set_play_rate_scalar (VALUE self, VALUE rb_scalar)
     RAISE_OSSTATUS(err, "MusicPlayerSetPlayRateScalar()");
 }
 
+static VALUE
+player_host_time_for_beats (VALUE self, VALUE rb_beats)
+{
+  MusicTimeStamp beats = NUM2ULONG(rb_beats);
+  
+  MusicPlayer *player;
+  Data_Get_Struct(self, MusicPlayer, player);
+
+  UInt64 host_time = 0;
+  OSStatus err;
+  
+  require_noerr( err = MusicPlayerGetHostTimeForBeats(*player, beats, &host_time), fail );
+  return rb_float_new(host_time);
+  
+ fail:
+  RAISE_OSSTATUS(err, "MusicPlayerGetHostTimeForBeats()");
+}
+
 /* Sequence defns */
 
 static void
@@ -1317,6 +1335,7 @@ Init_music_player ()
     rb_define_method(rb_cMusicPlayer, "time=", player_set_time, 1);
     rb_define_method(rb_cMusicPlayer, "play_rate_scalar", player_get_play_rate_scalar, 0);
     rb_define_method(rb_cMusicPlayer, "play_rate_scalar=", player_set_play_rate_scalar, 1);
+    rb_define_method(rb_cMusicPlayer, "host_time_for_beats", player_host_time_for_beats, 1);
     
     /* AudioToolbox::MusicSequence */
     rb_cMusicSequence = rb_define_class_under(rb_mAudioToolbox, "MusicSequence", rb_cObject);
