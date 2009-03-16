@@ -385,7 +385,7 @@ sequence_set_type (VALUE self, VALUE rb_type)
 static VALUE
 sequence_save (VALUE self, VALUE rb_path)
 {
-    CFURLRef url = PATH2CFURL(StringValue(rb_path));
+    CFURLRef url = PATH2CFURL(rb_funcall(rb_path, rb_intern("to_s"), 0));
     MusicSequence *seq;
     OSStatus err;
     
