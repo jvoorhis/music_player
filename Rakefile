@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'rake/testtask'
+require 'rake/gempackagetask'
 require 'rbconfig'
 
 def rb_cmd
@@ -8,9 +9,9 @@ def rb_cmd
                         ).sub(/.*\s.*/m, '"\&"')
 end
 
-task :build do; puts rb_cmd
+task :build do
   Dir.chdir('ext') do
-    system(rb_cmd, 'extconf.rb')
+    system(rb_cmd, 'music_player/extconf.rb')
     system('make')
   end
 end
@@ -28,5 +29,8 @@ Rake::TestTask.new do |t|
 end
 
 task :test => :build # Always test the latest build.
+
+spec = eval open('music_player.gemspec').read
+Rake::GemPackageTask.new spec do |pkg| end
 
 task :default => :test

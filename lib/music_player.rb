@@ -1,4 +1,4 @@
-$:.unshift File.join(File.dirname(__FILE__), '../ext')
+$:.unshift File.join(File.dirname(__FILE__), '../ext/music_player')
 require 'thread'
 require 'music_player.bundle'
 
