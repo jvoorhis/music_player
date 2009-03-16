@@ -9,6 +9,12 @@ class DrumMachine
     @track    = @sequence.tracks.new
     @track.add(0.0, MIDIProgramChangeMessage.new(:channel => 10, :program => 26))
     @track.add(0.0, MIDIControlChangeMessage.new(:channel => 10, :number => 32, :value => 1))
+    # Use the following call sequence to use an alternate midi destination.
+    # Hopefully a more complete interface will be implemented soon. MIDI
+    # destinations are referenced by their index beginning at 0.
+    # See also CoreMIDI::get_number_of_destinations().
+    # 
+    # @sequence.midi_endpoint = CoreMIDI.get_destination(ARGV.shift.to_i)
     @player.sequence = @sequence
     build_track
   end
@@ -22,9 +28,9 @@ class DrumMachine
   end
   
   def kick1(beat)
-    drum(beat, 32)
+    drum(beat, 35)
   end
-
+  
   def kick2(beat)
     drum(beat, 36)
   end
@@ -42,6 +48,9 @@ class DrumMachine
         snare(beat+extra)
       end
     end
+    
+    @track.length = 16
+    @track.loop_info = { :duration => @track.length, :number => 0 }
   end
   
   def run
