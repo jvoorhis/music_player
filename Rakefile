@@ -1,11 +1,11 @@
 require 'fileutils'
 require 'rake/testtask'
-require 'rake/gempackagetask'
+require 'rubygems/package_task'
 require 'rbconfig'
 
 def rb_cmd
-  @rb_cmd ||= File.join(Config::CONFIG['bindir'],
-                        Config::CONFIG['ruby_install_name']
+  @rb_cmd ||= File.join(RbConfig::CONFIG['bindir'],
+                        RbConfig::CONFIG['ruby_install_name']
                         ).sub(/.*\s.*/m, '"\&"')
 end
 
@@ -31,6 +31,6 @@ end
 task :test => :build # Always test the latest build.
 
 spec = eval open('music_player.gemspec').read
-Rake::GemPackageTask.new spec do |pkg| end
+Gem::PackageTask.new spec do |pkg| end
 
 task :default => :test

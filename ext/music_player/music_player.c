@@ -1,6 +1,9 @@
 /*
  * Copyright (c) 2009 Jeremy Voorhis <jvoorhis@gmail.com>
  */
+#define __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES 1
+#include <AssertMacros.h>
+#include <CoreServices/CoreServices.h> /* For definition of paramErr. but Really is it needed?? */
 
 #include <ruby.h>
 #include "util.h"
@@ -87,7 +90,7 @@ core_midi_get_destination (VALUE mod, VALUE idx)
 {
     ItemCount ic = NUM2UINT(idx);
     MIDIEndpointRef ref = MIDIGetDestination(ic);
-    if (NULL == ref) { return Qnil; }
+    if ((UInt32)NULL == ref) { return Qnil; }
     return ULONG2NUM((UInt32) ref);
 }
 
@@ -323,7 +326,7 @@ static VALUE
 sequence_set_midi_endpoint (VALUE self, VALUE rb_endpoint_ref)
 {
     MusicSequence *seq;
-    UInt32 ref = NUM2ULONG(rb_funcall(rb_mKernel, rb_intern("Integer"), 1, rb_endpoint_ref));
+    UInt64 ref = NUM2ULONG(rb_funcall(rb_mKernel, rb_intern("Integer"), 1, rb_endpoint_ref));
     OSStatus err;
     
     Data_Get_Struct(self, MusicSequence, seq);
